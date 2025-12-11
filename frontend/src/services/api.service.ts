@@ -67,6 +67,59 @@ export const analyzeArticlesKeywords = async (
 };
 
 /**
+ * 통합 분석 (키워드 + 워드클라우드)
+ * @param articles 뉴스 기사 배열
+ * @param topN 추출할 키워드 개수
+ * @returns 키워드 분석 결과 + 워드클라우드 이미지 URL
+ */
+export const completeAnalysis = async (
+  articles: any[],
+  topN: number = 20
+): Promise<any> => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/api/analysis/articles/complete`,
+      {
+        articles,
+        top_n: topN,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('통합 분석 실패:', error);
+    throw error;
+  }
+};
+
+/**
+ * 워드클라우드 생성
+ * @param keywords 키워드 딕셔너리 {단어: 빈도수}
+ * @param width 이미지 너비
+ * @param height 이미지 높이
+ * @returns 워드클라우드 이미지 URL
+ */
+export const generateWordCloud = async (
+  keywords: { [key: string]: number },
+  width: number = 600,
+  height: number = 400
+): Promise<any> => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/api/analysis/wordcloud`,
+      {
+        keywords,
+        width,
+        height,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('워드클라우드 생성 실패:', error);
+    throw error;
+  }
+};
+
+/**
  * API 서버 상태 확인
  * @returns 서버 상태
  */

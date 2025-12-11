@@ -7,21 +7,25 @@ import React, { useState } from 'react';
 import { SearchBar } from '../components/SearchBar';
 import { NewsList } from '../components/NewsList';
 import { KeywordChart } from '../components/KeywordChart';
-import { searchNews, analyzeArticlesKeywords } from '../services/api.service';
+import { WordCloud } from '../components/WordCloud';
+import { searchNews, completeAnalysis } from '../services/api.service';
 import { NewsArticle } from '../types/news.types';
 
 export const Dashboard: React.FC = () => {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [keywords, setKeywords] = useState<any[]>([]);
+  const [wordcloudUrl, setWordcloudUrl] = useState<string>('');
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [keywordLoading, setKeywordLoading] = useState(false);
+  const [wordcloudLoading, setWordcloudLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async (keyword: string, fromDate?: string, toDate?: string) => {
     setLoading(true);
     setError(null);
     setKeywords([]);
+    setWordcloudUrl('');
     setSearchKeyword(keyword);
 
     try {
@@ -32,19 +36,27 @@ export const Dashboard: React.FC = () => {
         const fetchedArticles = response.data.articles;
         setArticles(fetchedArticles);
         
-        // 2. 키워드 분석 (백그라운드)
+        // 2. 통합 분석 (키워드 + 워드클라우드)
         if (fetchedArticles && fetchedArticles.length > 0) {
           setKeywordLoading(true);
+          setWordcloudLoading(true);
+          
           try {
-            const keywordResponse = await analyzeArticlesKeywords(fetchedArticles, 6);
-            if (keywordResponse.status === 'success') {
-              setKeywords(keywordResponse.data.keywords || []);
+            const analysisResponse = await completeAnalysis(fetchedArticles, 20);
+            
+            if (analysisResponse.status === 'success') {
+              // 키워드 상위 6개만 표시
+              setKeywords(analysisResponse.data.keywords?.slice(0, 6) || []);
+              
+              // 워드클라우드 URL 설정
+              setWordcloudUrl(analysisResponse.data.wordcloudUrl || '');
             }
-          } catch (keywordErr) {
-            console.error('키워드 분석 에러:', keywordErr);
-            // 키워드 분석 실패해도 뉴스는 표시
+          } catch (analysisErr) {
+            console.error('분석 에러:', analysisErr);
+            // 분석 실패해도 뉴스는 표시
           } finally {
             setKeywordLoading(false);
+            setWordcloudLoading(false);
           }
         }
       } else {
@@ -59,6 +71,7 @@ export const Dashboard: React.FC = () => {
       );
       setArticles([]);
       setKeywords([]);
+      setWordcloudUrl('');
     } finally {
       setLoading(false);
     }
@@ -68,7 +81,7 @@ export const Dashboard: React.FC = () => {
     <div style={styles.container}>
       <header style={styles.header}>
         <div style={styles.headerContent}>
-          <h1 style={styles.title}>📰 Briefly News Insights</h1>
+          <h1 style={styles.title}>Briefly News Insights</h1>
           <p style={styles.subtitle}>뉴스 검색 및 분석 대시보드</p>
         </div>
       </header>
@@ -83,7 +96,7 @@ export const Dashboard: React.FC = () => {
           </div>
         )}
         
-        {/* 좌우 레이아웃: 키워드 차트(1) + 뉴스 목록(3) */}
+        {/* 좌우 레이아웃: 키워드 차트(1) + (워드클라우드 + 뉴스 목록)(3) */}
         {articles.length > 0 ? (
           <div style={styles.contentLayout}>
             {/* 왼쪽: 키워드 차트 (flex: 1) */}
@@ -95,8 +108,16 @@ export const Dashboard: React.FC = () => {
               />
             </div>
             
-            {/* 오른쪽: 뉴스 목록 (flex: 3) */}
+            {/* 오른쪽: 워드클라우드 + 뉴스 목록 (flex: 3) */}
             <div style={styles.newsSection}>
+              {/* 워드클라우드 */}
+              <WordCloud 
+                imageUrl={wordcloudUrl}
+                loading={wordcloudLoading}
+                searchKeyword={searchKeyword}
+              />
+              
+              {/* 뉴스 목록 */}
               <NewsList articles={articles} loading={loading} />
             </div>
           </div>
@@ -108,7 +129,7 @@ export const Dashboard: React.FC = () => {
 
       <footer style={styles.footer}>
         <p style={styles.footerText}>
-          Powered by NewsAPI | Phase 3: 키워드 분석 완료 ✅
+          Powered by NewsAPI | Phase 4: 워드클라우드 완료 ✅
         </p>
       </footer>
     </div>

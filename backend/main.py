@@ -1,8 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from api import news, analysis
+import os
+from pathlib import Path
 
 app = FastAPI(title="Briefly News Insights API", version="1.0.0")
+
+# 정적 파일 디렉토리 생성
+static_dir = Path("static/wordcloud")
+static_dir.mkdir(parents=True, exist_ok=True)
+
+# 정적 파일 서빙 (워드클라우드 이미지)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # CORS 설정
 app.add_middleware(
