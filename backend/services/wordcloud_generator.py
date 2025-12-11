@@ -38,14 +38,24 @@ def generate_wordcloud(
         return ""
     
     try:
-        # 한글 폰트 경로 설정 (Windows)
-        font_path = "C:/Windows/Fonts/malgun.ttf"  # 맑은 고딕
+        # 한글 폰트 경로 설정 (OS별)
+        import platform
         
-        # 폰트 파일 존재 확인
+        if platform.system() == 'Windows':
+            # Windows
+            font_path = "C:/Windows/Fonts/malgun.ttf"
+            if not os.path.exists(font_path):
+                font_path = "C:/Windows/Fonts/gulim.ttc"
+        else:
+            # Linux (Ubuntu)
+            font_path = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
+            if not os.path.exists(font_path):
+                font_path = "/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf"
+        
+        # 최종 폰트 파일 확인
         if not os.path.exists(font_path):
-            logger.warning(f"폰트 파일을 찾을 수 없습니다: {font_path}")
-            # 대체 폰트 시도
-            font_path = "C:/Windows/Fonts/gulim.ttc"  # 굴림
+            logger.error(f"폰트 파일을 찾을 수 없습니다: {font_path}")
+            raise FileNotFoundError(f"한글 폰트를 찾을 수 없습니다: {font_path}")
         
         # 워드클라우드 생성
         wc = WordCloud(
