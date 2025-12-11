@@ -86,7 +86,7 @@ def generate_wordcloud(
         plt.close()
         
         # URL 경로 반환
-        url_path = f"/static/wordcloud/{filename}"
+        url_path = f"/api/wordcloud/{filename}"
         logger.info(f"워드클라우드 생성 완료: {url_path}")
         
         return url_path
