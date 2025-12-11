@@ -1,0 +1,255 @@
+# Briefly News Insights - Cursor AI Rules
+
+## 프로젝트 개요
+- **프로젝트명**: Briefly News Insights (뉴스 요약·키워드 대시보드)
+- **저장소**: https://github.com/nk329/briefly-news-insights
+- **구조**: 모노레포 (backend + frontend)
+- **목적**: 뉴스 검색, 요약, 키워드 분석, 워드클라우드 생성
+
+## 기술 스택
+
+### 백엔드 (backend/)
+- Python 3.11+
+- FastAPI (REST API)
+- KoNLPy (한글 형태소 분석)
+- wordcloud (워드클라우드 생성)
+- NewsAPI (뉴스 데이터)
+- uvicorn, gunicorn (서버)
+
+### 프론트엔드 (frontend/)
+- React 18
+- TypeScript
+- Axios (HTTP 클라이언트)
+- Recharts (차트 라이브러리)
+- Material-UI 또는 Ant Design
+
+### 인프라
+- AWS EC2 (Ubuntu)
+- Nginx (리버스 프록시)
+- GitHub Actions (CI/CD)
+
+## 폴더 구조
+
+```
+briefly-news-insights/
+├── backend/
+│   ├── main.py
+│   ├── api/           # 라우터
+│   ├── services/      # 비즈니스 로직
+│   ├── models/        # Pydantic 모델
+│   ├── utils/         # 유틸리티
+│   └── static/        # 정적 파일
+└── frontend/
+    └── src/
+        ├── components/  # 재사용 컴포넌트
+        ├── screens/     # 페이지
+        ├── services/    # API 호출
+        ├── types/       # TypeScript 타입
+        ├── contexts/    # Context API
+        └── utils/       # 헬퍼 함수
+```
+
+## 코딩 규칙
+
+### 공통
+- 한국어 주석 사용
+- 의미있는 변수명 사용
+- 함수는 단일 책임 원칙
+- 환경 변수는 .env 파일 사용 (절대 커밋 금지)
+
+### Python (백엔드)
+- PEP 8 스타일 가이드 준수
+- Type hints 사용 권장
+- async/await 비동기 패턴 사용
+- Pydantic 모델로 Request/Response 검증
+- docstring 작성 (주요 함수)
+
+```python
+# 좋은 예시
+async def search_news(
+    keyword: str,
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None
+) -> List[NewsArticle]:
+    """뉴스 검색 API 호출
+    
+    Args:
+        keyword: 검색 키워드
+        from_date: 시작일 (YYYY-MM-DD)
+        to_date: 종료일 (YYYY-MM-DD)
+    
+    Returns:
+        뉴스 기사 목록
+    """
+    # 구현
+```
+
+### TypeScript (프론트엔드)
+- 엄격한 타입 체킹 사용
+- interface로 타입 정의 (types/ 폴더)
+- 함수형 컴포넌트 사용
+- hooks 사용 (useState, useEffect, useContext)
+- props는 구조 분해 할당
+
+```typescript
+// 좋은 예시
+interface NewsCardProps {
+  title: string;
+  summary: string;
+  source: string;
+  url: string;
+}
+
+export const NewsCard: React.FC<NewsCardProps> = ({
+  title,
+  summary,
+  source,
+  url
+}) => {
+  // 구현
+};
+```
+
+### 파일명 규칙
+- Python: snake_case (예: `news_service.py`)
+- TypeScript: PascalCase for components (예: `NewsCard.tsx`)
+- TypeScript: camelCase for utilities (예: `apiHelpers.ts`)
+
+## API 설계
+
+### 주요 엔드포인트
+- `GET /api/news/search` - 뉴스 검색
+- `POST /api/analysis/keywords` - 키워드 분석
+- `POST /api/analysis/wordcloud` - 워드클라우드 생성
+- `POST /api/analysis/complete` - 통합 분석 (권장)
+
+### 응답 형식
+```json
+{
+  "status": "success" | "error",
+  "data": { ... },
+  "message": "optional message"
+}
+```
+
+## Git 커밋 규칙
+
+### 커밋 메시지 형식
+```
+<type>(scope): <subject>
+
+type:
+- feat: 새 기능
+- fix: 버그 수정
+- docs: 문서 수정
+- style: 코드 포맷팅
+- refactor: 리팩토링
+- test: 테스트 추가
+- chore: 빌드/설정 수정
+
+scope: backend, frontend, docs 등
+
+예시:
+feat(backend): 뉴스 검색 API 추가
+fix(frontend): 검색 버튼 클릭 오류 수정
+docs: API 문서 업데이트
+```
+
+## 개발 단계
+
+### Phase 1: MVP (최소 기능)
+- 백엔드: 뉴스 검색 API
+- 프론트엔드: 검색 UI + 목록 표시
+
+### Phase 2: 요약
+- 백엔드: TF-IDF 기반 요약
+- 프론트엔드: 요약문 표시
+
+### Phase 3: 키워드 분석
+- 백엔드: KoNLPy 형태소 분석
+- 프론트엔드: 키워드 차트
+
+### Phase 4: 워드클라우드
+- 백엔드: 이미지 생성
+- 프론트엔드: 이미지 표시
+
+### Phase 5: 배포
+- AWS EC2 배포
+- CI/CD 설정
+
+## 보안 규칙
+- API 키는 환경 변수로 관리
+- .env 파일은 절대 Git에 커밋하지 않음
+- CORS 설정 제한 (특정 도메인만)
+- Input validation 철저히
+- SQL Injection, XSS 방지
+
+## 성능 고려사항
+- 외부 API 호출 최소화 (캐싱 고려)
+- 프론트엔드 이미지 최적화
+- 백엔드 비동기 처리
+- 워드클라우드 이미지 정기 정리
+
+## 에러 처리
+- 백엔드: try-except로 에러 처리, 적절한 HTTP 상태 코드
+- 프론트엔드: try-catch, 사용자 친화적 에러 메시지
+- 로딩 상태 명확히 표시
+
+## 테스트 (선택)
+- 백엔드: pytest로 단위 테스트
+- 프론트엔드: Jest + React Testing Library
+
+## 📚 필수 참고 문서
+
+⭐ **PROJECT_GUIDE.md** - 프로젝트 완전 가이드 (필수!)
+- 이 파일에 모든 정보가 통합되어 있음
+- 개발 워크플로우, API 설계, 배포 방법, 트러블슈팅 등 전부 포함
+- 코드 작성 전 반드시 이 파일을 참고할 것
+
+## AI 작업 시 지침
+
+### 최우선 규칙
+**모든 코드 작성 전에 PROJECT_GUIDE.md를 먼저 참고하세요!**
+
+### 구체적인 지침
+1. **코드 작성 시**: PROJECT_GUIDE.md의 해당 섹션 참고
+   - API 개발: "API 설계" 섹션 확인
+   - 백엔드 개발: "개발 워크플로우 Phase 1~4" 참고
+   - 프론트엔드: "폴더 구조" 및 예시 코드 확인
+   - 배포: "AWS 배포" 및 "CI/CD 자동화" 섹션
+
+2. **파일 생성 시**: 
+   - 적절한 폴더에 배치 (PROJECT_GUIDE.md의 폴더 구조 참고)
+   - 파일명 규칙 준수 (Python: snake_case, TS: PascalCase/camelCase)
+
+3. **코드 품질**:
+   - import 구문 정리 (사용하지 않는 import 제거)
+   - 주석은 한국어로 작성
+   - 복잡한 로직은 설명 주석 추가
+   - 환경 변수 사용 시 .env.example도 업데이트
+   - 새로운 패키지 추가 시 requirements.txt 또는 package.json 업데이트
+
+4. **API 개발 시**:
+   - PROJECT_GUIDE.md의 "API 설계" 섹션 필수 확인
+   - 응답 형식 통일 (status, data, message)
+   - 에러 처리 포함
+   - async/await 패턴 사용
+
+5. **컴포넌트 개발 시**:
+   - PROJECT_GUIDE.md의 예시 코드 참고
+   - TypeScript interface 먼저 정의
+   - Props 구조 분해 할당
+   - 로딩/에러 상태 처리
+
+## 우선순위
+1. 기능 동작이 최우선
+2. 코드 가독성
+3. 성능 최적화
+4. 테스트 커버리지
+
+## 개발 환경
+- OS: Windows 10
+- Shell: PowerShell
+- 한국어 응답 선호
+- 모노레포 구조로 백엔드/프론트엔드 함께 관리
+
