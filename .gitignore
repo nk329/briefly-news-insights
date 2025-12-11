@@ -136,3 +136,10 @@ backend/static/wordcloud/*.jpg
 # 에디터 백업
 *~
 
+# ==================== 프로젝트 설정 (로컬 전용) ====================
+# Cursor AI 설정
+.cursorrules
+
+# 프로젝트 가이드 (로컬 개발용)
+PROJECT_GUIDE.md
+
