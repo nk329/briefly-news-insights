@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 import logging
 from services.summarizer import summarize_articles
+from services.gpt_summarizer import summarize_articles_with_gpt
 
 # 로깅 설정
 logging.basicConfig(level=logging.DEBUG)
@@ -27,7 +28,8 @@ async def search_news(
     from_date: str = Query(None, description="시작일 (YYYY-MM-DD)"),
     to_date: str = Query(None, description="종료일 (YYYY-MM-DD)"),
     page_size: int = Query(10, ge=1, le=100, description="결과 개수"),
-    summarize: bool = Query(True, description="요약 포함 여부")
+    summarize: bool = Query(True, description="요약 포함 여부"),
+    use_gpt: bool = Query(False, description="GPT-4 요약 사용 여부 (기본: TF-IDF)")
 ):
     """뉴스 검색 및 요약 API
     
@@ -37,12 +39,13 @@ async def search_news(
         to_date: 검색 종료일
         page_size: 결과 개수 (1-100)
         summarize: 요약 포함 여부 (기본 True)
+        use_gpt: GPT-4 요약 사용 (기본 False, TF-IDF 사용)
     
     Returns:
         뉴스 기사 목록 (요약 포함)
     """
     try:
-        logger.info(f"뉴스 검색 시작: keyword={keyword}, from={from_date}, to={to_date}")
+        logger.info(f"뉴스 검색 시작: keyword={keyword}, from={from_date}, to={to_date}, use_gpt={use_gpt}")
         
         # NewsAPI get_everything은 language 파라미터 제한적
         # 한국어 뉴스는 키워드에 한글 포함 시 자동 검색됨
@@ -58,17 +61,32 @@ async def search_news(
         
         articles = response['articles']
         
-        # 요약 기능 적용
-        if summarize and articles:
-            logger.info(f"요약 시작: {len(articles)}개 기사")
-            articles = summarize_articles(articles, num_sentences=3)
-            logger.info("요약 완료")
+        # GPT 요약 기능 (활성화)
+        if summarize and articles and use_gpt:
+            # GPT-4 요약 사용
+            logger.info(f"GPT-4 요약 시작: {len(articles)}개 기사")
+            try:
+                articles = summarize_articles_with_gpt(articles, max_sentences=3)
+                logger.info("GPT-4 요약 완료")
+            except Exception as gpt_error:
+                logger.error(f"GPT-4 요약 실패: {gpt_error}")
+                # GPT 실패 시 원본 기사 반환 (빠른 응답)
+        else:
+            logger.info("GPT 요약 비활성화 또는 체크박스 OFF")
+        
+        # ======== TF-IDF 요약은 주석 처리 (속도 개선) ========
+        # if summarize and articles and not use_gpt:
+        #     logger.info(f"TF-IDF 요약 시작: {len(articles)}개 기사")
+        #     articles = summarize_articles(articles, num_sentences=3)
+        #     logger.info("TF-IDF 요약 완료")
+        # ================================================
         
         return {
             "status": "success",
             "data": {
                 "total": response['totalResults'],
-                "articles": articles
+                "articles": articles,
+                "summary_method": "gpt-4o-mini" if (summarize and use_gpt) else "tfidf" if summarize else "none"
             }
         }
     except Exception as e:

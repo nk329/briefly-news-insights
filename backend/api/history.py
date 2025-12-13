@@ -100,3 +100,5 @@ async def delete_all_search_histories(
     
     return None
 
+
+

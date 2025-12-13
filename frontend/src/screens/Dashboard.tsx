@@ -7,34 +7,35 @@ import React, { useState } from 'react';
 import { UserHeader } from '../components/UserHeader';
 import { SearchBar } from '../components/SearchBar';
 import { NewsList } from '../components/NewsList';
-import { KeywordChart } from '../components/KeywordChart';
-import { WordCloud } from '../components/WordCloud';
+// import { KeywordChart } from '../components/KeywordChart'; // 주석 처리 (속도 개선)
+// import { WordCloud } from '../components/WordCloud'; // 주석 처리 (속도 개선)
 import { SearchHistory } from '../components/SearchHistory';
-import { searchNews, completeAnalysis, createSearchHistory } from '../services/api.service';
+import { searchNews, createSearchHistory } from '../services/api.service';
+// import { completeAnalysis } from '../services/api.service'; // 주석 처리 (속도 개선)
 import { NewsArticle } from '../types/news.types';
 import { useAuth } from '../contexts/AuthContext';
 
 export const Dashboard: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const [articles, setArticles] = useState<NewsArticle[]>([]);
-  const [keywords, setKeywords] = useState<any[]>([]);
-  const [wordcloudUrl, setWordcloudUrl] = useState<string>('');
+  // const [keywords, setKeywords] = useState<any[]>([]); // 주석 처리 (속도 개선)
+  // const [wordcloudUrl, setWordcloudUrl] = useState<string>(''); // 주석 처리 (속도 개선)
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [keywordLoading, setKeywordLoading] = useState(false);
-  const [wordcloudLoading, setWordcloudLoading] = useState(false);
+  // const [keywordLoading, setKeywordLoading] = useState(false); // 주석 처리 (속도 개선)
+  // const [wordcloudLoading, setWordcloudLoading] = useState(false); // 주석 처리 (속도 개선)
   const [error, setError] = useState<string | null>(null);
 
-  const handleSearch = async (keyword: string, fromDate?: string, toDate?: string) => {
+  const handleSearch = async (keyword: string, fromDate?: string, toDate?: string, useGpt?: boolean) => {
     setLoading(true);
     setError(null);
-    setKeywords([]);
-    setWordcloudUrl('');
+    // setKeywords([]); // 주석 처리 (속도 개선)
+    // setWordcloudUrl(''); // 주석 처리 (속도 개선)
     setSearchKeyword(keyword);
 
     try {
-      // 1. 뉴스 검색
-      const response = await searchNews(keyword, fromDate, toDate);
+      // 1. 뉴스 검색 (GPT 옵션 포함)
+      const response = await searchNews(keyword, fromDate, toDate, 10, useGpt || false);
       
       if (response.status === 'success') {
         const fetchedArticles = response.data.articles;
@@ -54,29 +55,31 @@ export const Dashboard: React.FC = () => {
           }
         }
         
+        // ======== 키워드 분석 & 워드클라우드 주석 처리 (속도 개선) ========
         // 2. 통합 분석 (키워드 + 워드클라우드)
-        if (fetchedArticles && fetchedArticles.length > 0) {
-          setKeywordLoading(true);
-          setWordcloudLoading(true);
-          
-          try {
-            const analysisResponse = await completeAnalysis(fetchedArticles, 20);
-            
-            if (analysisResponse.status === 'success') {
-              // 키워드 상위 6개만 표시
-              setKeywords(analysisResponse.data.keywords?.slice(0, 6) || []);
-              
-              // 워드클라우드 URL 설정
-              setWordcloudUrl(analysisResponse.data.wordcloudUrl || '');
-            }
-          } catch (analysisErr) {
-            console.error('분석 에러:', analysisErr);
-            // 분석 실패해도 뉴스는 표시
-          } finally {
-            setKeywordLoading(false);
-            setWordcloudLoading(false);
-          }
-        }
+        // if (fetchedArticles && fetchedArticles.length > 0) {
+        //   setKeywordLoading(true);
+        //   setWordcloudLoading(true);
+        //   
+        //   try {
+        //     const analysisResponse = await completeAnalysis(fetchedArticles, 20);
+        //     
+        //     if (analysisResponse.status === 'success') {
+        //       // 키워드 상위 6개만 표시
+        //       setKeywords(analysisResponse.data.keywords?.slice(0, 6) || []);
+        //       
+        //       // 워드클라우드 URL 설정
+        //       setWordcloudUrl(analysisResponse.data.wordcloudUrl || '');
+        //     }
+        //   } catch (analysisErr) {
+        //     console.error('분석 에러:', analysisErr);
+        //     // 분석 실패해도 뉴스는 표시
+        //   } finally {
+        //     setKeywordLoading(false);
+        //     setWordcloudLoading(false);
+        //   }
+        // }
+        // ================================================================
       } else {
         setError(response.message || '뉴스 검색에 실패했습니다.');
       }
@@ -88,8 +91,8 @@ export const Dashboard: React.FC = () => {
         '뉴스 검색에 실패했습니다. 잠시 후 다시 시도해주세요.'
       );
       setArticles([]);
-      setKeywords([]);
-      setWordcloudUrl('');
+      // setKeywords([]); // 주석 처리 (속도 개선)
+      // setWordcloudUrl(''); // 주석 처리 (속도 개선)
     } finally {
       setLoading(false);
     }
@@ -97,12 +100,13 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div style={styles.container}>
-      <UserHeader />
-      
       <header style={styles.header}>
         <div style={styles.headerContent}>
-          <h1 style={styles.title}>Briefly News Insights</h1>
-          <p style={styles.subtitle}>뉴스 검색 및 분석 대시보드</p>
+          <div style={styles.titleSection}>
+            <h1 style={styles.title}>Briefly News Insights</h1>
+            <p style={styles.subtitle}>뉴스 검색 및 분석 대시보드</p>
+          </div>
+          <UserHeader />
         </div>
       </header>
 
@@ -125,10 +129,12 @@ export const Dashboard: React.FC = () => {
           </div>
         )}
         
-        {/* 좌우 레이아웃: 키워드 차트(1) + (워드클라우드 + 뉴스 목록)(3) */}
+        {/* 뉴스 목록만 표시 (간단한 레이아웃) */}
+        <NewsList articles={articles} loading={loading} />
+        
+        {/* ======== 아래는 주석 처리된 키워드 차트 & 워드클라우드 코드 ======== 
         {articles.length > 0 ? (
           <div style={styles.contentLayout}>
-            {/* 왼쪽: 키워드 차트 (flex: 1) */}
             <div style={styles.keywordSection}>
               <KeywordChart 
                 keywords={keywords} 
@@ -137,23 +143,20 @@ export const Dashboard: React.FC = () => {
               />
             </div>
             
-            {/* 오른쪽: 워드클라우드 + 뉴스 목록 (flex: 3) */}
             <div style={styles.newsSection}>
-              {/* 워드클라우드 */}
               <WordCloud 
                 imageUrl={wordcloudUrl}
                 loading={wordcloudLoading}
                 searchKeyword={searchKeyword}
               />
               
-              {/* 뉴스 목록 */}
               <NewsList articles={articles} loading={loading} />
             </div>
           </div>
         ) : (
-          /* 검색 결과가 없을 때는 중앙에 표시 */
           <NewsList articles={articles} loading={loading} />
         )}
+        ================================================================ */}
       </main>
 
       <footer style={styles.footer}>
@@ -181,6 +184,13 @@ const styles: { [key: string]: React.CSSProperties } = {
   headerContent: {
     maxWidth: '1200px',
     margin: '0 auto',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  titleSection: {
+    display: 'flex',
+    flexDirection: 'column',
   },
   title: {
     fontSize: '36px',

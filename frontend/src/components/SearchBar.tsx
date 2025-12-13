@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 
 interface SearchBarProps {
-  onSearch: (keyword: string, fromDate?: string, toDate?: string) => void;
+  onSearch: (keyword: string, fromDate?: string, toDate?: string, useGpt?: boolean) => void;
   loading?: boolean;
 }
 
@@ -14,11 +14,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, loading }) => {
   const [keyword, setKeyword] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [useGpt, setUseGpt] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (keyword.trim()) {
-      onSearch(keyword, fromDate || undefined, toDate || undefined);
+      onSearch(keyword, fromDate || undefined, toDate || undefined, useGpt);
     }
   };
 
@@ -54,6 +55,20 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, loading }) => {
             disabled={loading}
             placeholder="종료일"
           />
+        </div>
+        
+        <div style={styles.gptContainer}>
+          <label style={styles.gptLabel}>
+            <input
+              type="checkbox"
+              checked={useGpt}
+              onChange={(e) => setUseGpt(e.target.checked)}
+              disabled={loading}
+              style={styles.checkbox}
+            />
+            <span style={styles.gptText}>✨ GPT-4 요약 사용</span>
+            <span style={styles.gptBadge}>고급</span>
+          </label>
         </div>
         
         <button
@@ -132,7 +147,44 @@ const styles: { [key: string]: React.CSSProperties } = {
     cursor: 'not-allowed',
     boxShadow: 'none',
   },
+  gptContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  gptLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    userSelect: 'none',
+  },
+  checkbox: {
+    width: '18px',
+    height: '18px',
+    cursor: 'pointer',
+  },
+  gptText: {
+    color: '#333',
+    fontWeight: 500,
+  },
+  gptBadge: {
+    padding: '2px 8px',
+    fontSize: '11px',
+    backgroundColor: '#ff6b6b',
+    color: 'white',
+    borderRadius: '12px',
+    fontWeight: 600,
+  },
+  gptHint: {
+    fontSize: '12px',
+    color: '#999',
+    fontStyle: 'italic',
+  },
 };
+
+
 
 
 

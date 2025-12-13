@@ -245,13 +245,15 @@ export const deleteCategory = async (categoryId: number): Promise<void> => {
  * @param fromDate 시작일 (YYYY-MM-DD)
  * @param toDate 종료일 (YYYY-MM-DD)
  * @param pageSize 결과 개수 (기본 10)
+ * @param useGpt GPT-4 요약 사용 여부 (기본 false)
  * @returns 뉴스 검색 결과
  */
 export const searchNews = async (
   keyword: string,
   fromDate?: string,
   toDate?: string,
-  pageSize: number = 10
+  pageSize: number = 10,
+  useGpt: boolean = false
 ): Promise<NewsSearchResponse> => {
   try {
     const response = await apiClient.get<NewsSearchResponse>(
@@ -262,6 +264,7 @@ export const searchNews = async (
           from_date: fromDate,
           to_date: toDate,
           page_size: pageSize,
+          use_gpt: useGpt,
         },
       }
     );

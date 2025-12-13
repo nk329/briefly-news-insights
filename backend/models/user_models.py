@@ -53,3 +53,5 @@ class Category(Base):
     # 관계
     user = relationship("User", back_populates="categories")
 
+
+

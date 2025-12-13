@@ -79,8 +79,15 @@ export const NewsList: React.FC<NewsListProps> = ({ articles, loading }) => {
               
               {article.summary && (
                 <div style={styles.summarySection}>
-                  <div style={styles.summaryBadge}>✨ AI 요약</div>
+                  <div style={styles.summaryBadge}>✨ AI 요약 (TF-IDF)</div>
                   <p style={styles.summary}>{article.summary}</p>
+                </div>
+              )}
+              
+              {(article as any).gpt_summary && (
+                <div style={styles.gptSummarySection}>
+                  <div style={styles.gptSummaryBadge}>🤖 GPT-4 요약</div>
+                  <p style={styles.gptSummary}>{(article as any).gpt_summary}</p>
                 </div>
               )}
               
@@ -203,6 +210,32 @@ const styles: { [key: string]: React.CSSProperties } = {
   summary: {
     color: '#2c3e50',
     lineHeight: '1.8',
+    margin: 0,
+    fontSize: '15px',
+    fontWeight: 500,
+  },
+  gptSummarySection: {
+    backgroundColor: '#fff5f5',
+    padding: '15px',
+    borderRadius: '8px',
+    marginBottom: '15px',
+    border: '2px solid #ff6b6b',
+    boxShadow: '0 2px 4px rgba(255, 107, 107, 0.1)',
+  },
+  gptSummaryBadge: {
+    display: 'inline-block',
+    background: 'linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%)',
+    color: 'white',
+    padding: '5px 14px',
+    borderRadius: '14px',
+    fontSize: '12px',
+    fontWeight: 700,
+    marginBottom: '12px',
+    boxShadow: '0 2px 4px rgba(255, 107, 107, 0.3)',
+  },
+  gptSummary: {
+    color: '#2c3e50',
+    lineHeight: '1.9',
     margin: 0,
     fontSize: '15px',
     fontWeight: 500,
