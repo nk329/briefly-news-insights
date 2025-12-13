@@ -4,14 +4,18 @@
  */
 
 import React, { useState } from 'react';
+import { UserHeader } from '../components/UserHeader';
 import { SearchBar } from '../components/SearchBar';
 import { NewsList } from '../components/NewsList';
 import { KeywordChart } from '../components/KeywordChart';
 import { WordCloud } from '../components/WordCloud';
-import { searchNews, completeAnalysis } from '../services/api.service';
+import { SearchHistory } from '../components/SearchHistory';
+import { searchNews, completeAnalysis, createSearchHistory } from '../services/api.service';
 import { NewsArticle } from '../types/news.types';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Dashboard: React.FC = () => {
+  const { isAuthenticated } = useAuth();
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [keywords, setKeywords] = useState<any[]>([]);
   const [wordcloudUrl, setWordcloudUrl] = useState<string>('');
@@ -35,6 +39,20 @@ export const Dashboard: React.FC = () => {
       if (response.status === 'success') {
         const fetchedArticles = response.data.articles;
         setArticles(fetchedArticles);
+        
+        // 로그인한 사용자면 검색 히스토리 저장
+        if (isAuthenticated) {
+          try {
+            await createSearchHistory(
+              keyword,
+              fromDate,
+              toDate,
+              fetchedArticles.length
+            );
+          } catch (err) {
+            console.error('검색 히스토리 저장 실패:', err);
+          }
+        }
         
         // 2. 통합 분석 (키워드 + 워드클라우드)
         if (fetchedArticles && fetchedArticles.length > 0) {
@@ -79,6 +97,8 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div style={styles.container}>
+      <UserHeader />
+      
       <header style={styles.header}>
         <div style={styles.headerContent}>
           <h1 style={styles.title}>Briefly News Insights</h1>
@@ -87,6 +107,15 @@ export const Dashboard: React.FC = () => {
       </header>
 
       <main style={styles.main}>
+        {/* 로그인한 사용자에게만 검색 히스토리 표시 */}
+        {isAuthenticated && (
+          <SearchHistory 
+            onSelectHistory={(keyword, fromDate, toDate) => {
+              handleSearch(keyword, fromDate, toDate);
+            }}
+          />
+        )}
+        
         <SearchBar onSearch={handleSearch} loading={loading} />
         
         {error && (

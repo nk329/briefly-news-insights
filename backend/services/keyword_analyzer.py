@@ -188,3 +188,4 @@ def analyze_articles_keywords(articles: list, top_n: int = 20) -> dict:
         logger.error(f"기사 키워드 분석 중 에러: {e}")
         return {"keywords": [], "total_words": 0, "analyzed_articles": 0}
 
+

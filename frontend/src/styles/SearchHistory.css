@@ -1,0 +1,118 @@
+/* 검색 히스토리 스타일 */
+
+.history-container {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.history-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.btn-clear-all {
+  padding: 6px 12px;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-clear-all:hover {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.history-loading,
+.history-error,
+.history-empty {
+  padding: 32px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
+.history-error {
+  color: #c62828;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.history-item:hover {
+  background: #e3f2fd;
+}
+
+.history-item-content {
+  flex: 1;
+}
+
+.history-keyword {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.history-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  color: #999;
+}
+
+.history-time,
+.history-count {
+  display: inline-block;
+}
+
+.btn-delete {
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  font-size: 24px;
+  line-height: 1;
+  color: #999;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-delete:hover {
+  background: #ffebee;
+  color: #c62828;
+}
+
