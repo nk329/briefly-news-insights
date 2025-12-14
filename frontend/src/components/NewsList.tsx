@@ -9,9 +9,24 @@ import { NewsArticle } from '../types/news.types';
 interface NewsListProps {
   articles: NewsArticle[];
   loading?: boolean;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
 }
 
-export const NewsList: React.FC<NewsListProps> = ({ articles, loading }) => {
+export const NewsList: React.FC<NewsListProps> = ({ 
+  articles, 
+  loading, 
+  onLoadMore, 
+  hasMore = false, 
+  loadingMore = false 
+}) => {
+  const [showOriginal, setShowOriginal] = React.useState<{ [key: number]: boolean }>({});
+
+  const toggleOriginal = (index: number) => {
+    setShowOriginal(prev => ({ ...prev, [index]: !prev[index] }));
+  };
+
   if (loading) {
     return (
       <div style={styles.message}>
@@ -32,11 +47,18 @@ export const NewsList: React.FC<NewsListProps> = ({ articles, loading }) => {
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h2 style={styles.title}>검색 결과</h2>
-        <span style={styles.count}>{articles.length}건</span>
-      </div>
+    <>
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <h2 style={styles.title}>검색 결과</h2>
+          <span style={styles.count}>{articles.length}건</span>
+        </div>
       
       <div style={styles.list}>
         {articles.map((article, index) => (
@@ -55,6 +77,7 @@ export const NewsList: React.FC<NewsListProps> = ({ articles, loading }) => {
             )}
             
             <div style={styles.content}>
+              {/* 번역된 제목 (있으면 표시, 없으면 원본) */}
               <h3 style={styles.cardTitle}>
                 <a
                   href={article.url}
@@ -62,9 +85,26 @@ export const NewsList: React.FC<NewsListProps> = ({ articles, loading }) => {
                   rel="noopener noreferrer"
                   style={styles.link}
                 >
-                  {article.title}
+                  {showOriginal[index] && article.original_title
+                    ? article.original_title
+                    : (article.translated_title || article.title)}
                 </a>
               </h3>
+              
+              {/* 번역 배지 (번역된 경우만 표시) */}
+              {article.translated_title && (
+                <div style={styles.translationBadge}>
+                  🌐 번역됨 ({article.translation_language === 'ko' ? '한국어' : 
+                    article.translation_language === 'en' ? '영어' : 
+                    article.translation_language === 'ja' ? '일본어' : '번역'})
+                  <button
+                    onClick={() => toggleOriginal(index)}
+                    style={styles.toggleButton}
+                  >
+                    {showOriginal[index] ? '번역 보기' : '원문 보기'}
+                  </button>
+                </div>
+              )}
               
               <div style={styles.meta}>
                 <span style={styles.source}>🏢 {article.source.name}</span>
@@ -77,22 +117,27 @@ export const NewsList: React.FC<NewsListProps> = ({ articles, loading }) => {
                 </span>
               </div>
               
-              {article.summary && (
+              {/* GPT 요약 (있으면 표시) */}
+              {article.summary && article.summary_type === 'gpt' && (
+                <div style={styles.gptSummarySection}>
+                  <div style={styles.gptSummaryBadge}>🤖 GPT-4 요약</div>
+                  <p style={styles.gptSummary}>{article.summary}</p>
+                </div>
+              )}
+              
+              {/* TF-IDF 요약 (GPT 아닌 경우) */}
+              {article.summary && article.summary_type !== 'gpt' && (
                 <div style={styles.summarySection}>
                   <div style={styles.summaryBadge}>✨ AI 요약 (TF-IDF)</div>
                   <p style={styles.summary}>{article.summary}</p>
                 </div>
               )}
               
-              {(article as any).gpt_summary && (
-                <div style={styles.gptSummarySection}>
-                  <div style={styles.gptSummaryBadge}>🤖 GPT-4 요약</div>
-                  <p style={styles.gptSummary}>{(article as any).gpt_summary}</p>
-                </div>
-              )}
-              
+              {/* 설명 (번역 여부에 따라) */}
               <p style={styles.description}>
-                {article.description || article.content?.slice(0, 200) + '...' || '내용 없음'}
+                {showOriginal[index] && article.original_description
+                  ? article.original_description
+                  : (article.translated_description || article.description || article.content?.slice(0, 200) + '...' || '내용 없음')}
               </p>
               
               <a
@@ -107,7 +152,38 @@ export const NewsList: React.FC<NewsListProps> = ({ articles, loading }) => {
           </div>
         ))}
       </div>
+      
+      {/* 더 보기 버튼 */}
+      {hasMore && onLoadMore && (
+        <div style={styles.loadMoreContainer}>
+          {loadingMore ? (
+            <div style={styles.loadingWrapper}>
+              <div style={styles.loadingSpinner}></div>
+              <span style={styles.loadingText}>뉴스를 불러오는 중...</span>
+              <span style={styles.loadingSubtext}>잠시만 기다려주세요</span>
+            </div>
+          ) : (
+            <button
+              onClick={onLoadMore}
+              style={styles.loadMoreButton}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#0056b3';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 123, 255, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#007bff';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 123, 255, 0.3)';
+              }}
+            >
+              📰 더 보기 (5개)
+            </button>
+          )}
+        </div>
+      )}
     </div>
+    </>
   );
 };
 
@@ -190,6 +266,31 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: 600,
   },
   date: {},
+  translationBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    backgroundColor: '#f0fdf4',
+    padding: '8px 12px',
+    borderRadius: '8px',
+    marginBottom: '10px',
+    border: '1px solid #86efac',
+    fontSize: '13px',
+    color: '#15803d',
+    fontWeight: 600,
+  },
+  toggleButton: {
+    marginLeft: 'auto',
+    padding: '4px 12px',
+    fontSize: '12px',
+    backgroundColor: '#10b981',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: 600,
+    transition: 'all 0.3s',
+  },
   summarySection: {
     backgroundColor: '#f0f8ff',
     padding: '15px',
@@ -274,6 +375,50 @@ const styles: { [key: string]: React.CSSProperties } = {
   emptyHint: {
     fontSize: '14px',
     color: '#999',
+  },
+  loadMoreContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: '40px',
+    marginBottom: '20px',
+  },
+  loadMoreButton: {
+    padding: '14px 40px',
+    fontSize: '16px',
+    fontWeight: 600,
+    color: 'white',
+    backgroundColor: '#007bff',
+    border: 'none',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    transition: 'all 0.3s',
+    boxShadow: '0 4px 12px rgba(0, 123, 255, 0.3)',
+  },
+  loadingWrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '15px',
+    padding: '20px',
+  },
+  loadingSpinner: {
+    width: '40px',
+    height: '40px',
+    border: '4px solid #f3f3f3',
+    borderTop: '4px solid #007bff',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
+  },
+  loadingText: {
+    fontSize: '16px',
+    color: '#666',
+    fontWeight: 500,
+  },
+  loadingSubtext: {
+    fontSize: '14px',
+    color: '#999',
+    fontStyle: 'italic',
   },
 };
 

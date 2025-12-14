@@ -22,30 +22,66 @@ export const Dashboard: React.FC = () => {
   // const [wordcloudUrl, setWordcloudUrl] = useState<string>(''); // 주석 처리 (속도 개선)
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false); // "더 보기" 로딩 상태
+  const [currentPageSize, setCurrentPageSize] = useState(5); // 현재 표시할 개수
+  const [totalResults, setTotalResults] = useState(0); // 전체 결과 개수
+  const [lastSearchParams, setLastSearchParams] = useState<{
+    keyword: string;
+    country: string;
+    translateTo: string;
+    fromDate?: string;
+    toDate?: string;
+    useGpt?: boolean;
+  } | null>(null);
   // const [keywordLoading, setKeywordLoading] = useState(false); // 주석 처리 (속도 개선)
   // const [wordcloudLoading, setWordcloudLoading] = useState(false); // 주석 처리 (속도 개선)
   const [error, setError] = useState<string | null>(null);
 
-  const handleSearch = async (keyword: string, fromDate?: string, toDate?: string, useGpt?: boolean) => {
+  const handleSearch = async (
+    keyword: string,
+    country: string,
+    translateTo: string,
+    fromDate?: string,
+    toDate?: string,
+    useGpt?: boolean
+  ) => {
     setLoading(true);
     setError(null);
-    // setKeywords([]); // 주석 처리 (속도 개선)
-    // setWordcloudUrl(''); // 주석 처리 (속도 개선)
-    setSearchKeyword(keyword);
+    setSearchKeyword(keyword || `${country} 뉴스`);
+    setCurrentPageSize(5); // 새 검색 시 초기화
+
+    // 검색 파라미터 저장 (더 보기 버튼용)
+    setLastSearchParams({
+      keyword,
+      country,
+      translateTo,
+      fromDate,
+      toDate,
+      useGpt
+    });
 
     try {
-      // 1. 뉴스 검색 (GPT 옵션 포함)
-      const response = await searchNews(keyword, fromDate, toDate, 10, useGpt || false);
+      // 1. 뉴스 검색 (국가별 + 번역 + GPT 옵션) - 기본 5개
+      const response = await searchNews(
+        keyword,
+        country,
+        translateTo,
+        fromDate,
+        toDate,
+        5, // 기본값 5개
+        useGpt || false
+      );
       
       if (response.status === 'success') {
         const fetchedArticles = response.data.articles;
         setArticles(fetchedArticles);
+        setTotalResults(response.data.total || 0);
         
         // 로그인한 사용자면 검색 히스토리 저장
         if (isAuthenticated) {
           try {
             await createSearchHistory(
-              keyword,
+              keyword || `${country} 헤드라인`,
               fromDate,
               toDate,
               fetchedArticles.length
@@ -91,10 +127,43 @@ export const Dashboard: React.FC = () => {
         '뉴스 검색에 실패했습니다. 잠시 후 다시 시도해주세요.'
       );
       setArticles([]);
+      setTotalResults(0);
       // setKeywords([]); // 주석 처리 (속도 개선)
       // setWordcloudUrl(''); // 주석 처리 (속도 개선)
     } finally {
       setLoading(false);
+    }
+  };
+
+  // "더 보기" 버튼 핸들러
+  const handleLoadMore = async () => {
+    if (!lastSearchParams || loadingMore) return;
+
+    setLoadingMore(true);
+    const nextPageSize = currentPageSize + 5; // 5개씩 추가
+
+    try {
+      const response = await searchNews(
+        lastSearchParams.keyword,
+        lastSearchParams.country,
+        lastSearchParams.translateTo,
+        lastSearchParams.fromDate,
+        lastSearchParams.toDate,
+        nextPageSize, // 더 많은 개수 요청
+        lastSearchParams.useGpt || false
+      );
+
+      if (response.status === 'success') {
+        const fetchedArticles = response.data.articles;
+        setArticles(fetchedArticles);
+        setCurrentPageSize(nextPageSize);
+        setTotalResults(response.data.total || 0);
+      }
+    } catch (err: any) {
+      console.error('더 보기 에러:', err);
+      setError('더 많은 뉴스를 불러오는데 실패했습니다.');
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -111,14 +180,14 @@ export const Dashboard: React.FC = () => {
       </header>
 
       <main style={styles.main}>
-        {/* 로그인한 사용자에게만 검색 히스토리 표시 */}
-        {isAuthenticated && (
-          <SearchHistory 
-            onSelectHistory={(keyword, fromDate, toDate) => {
-              handleSearch(keyword, fromDate, toDate);
-            }}
-          />
-        )}
+               {/* 로그인한 사용자에게만 검색 히스토리 표시 */}
+               {isAuthenticated && (
+                 <SearchHistory 
+                   onSelectHistory={(keyword, fromDate, toDate) => {
+                     handleSearch(keyword, 'kr', 'ko', fromDate, toDate);
+                   }}
+                 />
+               )}
         
         <SearchBar onSearch={handleSearch} loading={loading} />
         
@@ -130,7 +199,13 @@ export const Dashboard: React.FC = () => {
         )}
         
         {/* 뉴스 목록만 표시 (간단한 레이아웃) */}
-        <NewsList articles={articles} loading={loading} />
+        <NewsList 
+          articles={articles} 
+          loading={loading}
+          onLoadMore={handleLoadMore}
+          hasMore={articles.length < totalResults && !loadingMore}
+          loadingMore={loadingMore}
+        />
         
         {/* ======== 아래는 주석 처리된 키워드 차트 & 워드클라우드 코드 ======== 
         {articles.length > 0 ? (

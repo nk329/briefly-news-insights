@@ -130,3 +130,4 @@ export const SearchHistory: React.FC<SearchHistoryProps> = ({ onSelectHistory })
 
 
 
+

@@ -118,8 +118,13 @@ def summarize_articles_with_gpt(
             # GPT 요약
             gpt_summary = summarize_with_gpt(full_text, max_sentences, model)
             
-            # 원본 기사에 GPT 요약 추가
-            article_with_summary = {**article, "gpt_summary": gpt_summary}
+            # 원본 기사에 GPT 요약 추가 (summary 필드와 summary_type 필드 추가)
+            article_with_summary = {
+                **article, 
+                "summary": gpt_summary,  # 프론트엔드에서 사용하는 필드
+                "summary_type": "gpt",   # 요약 타입 표시
+                "gpt_summary": gpt_summary  # 호환성을 위해 유지
+            }
             summarized_articles.append(article_with_summary)
             
         except Exception as e:
@@ -129,12 +134,20 @@ def summarize_articles_with_gpt(
             # 429 에러 (할당량 초과) 또는 401 에러 (인증 실패) 시 조기 종료
             if "429" in error_msg or "insufficient_quota" in error_msg or "401" in error_msg:
                 logger.warning("API 할당량 초과 또는 인증 실패. GPT 요약을 중단하고 원본 기사를 반환합니다.")
-                # 이미 요약된 기사와 나머지 원본 기사를 모두 반환
-                remaining_articles = articles[len(summarized_articles):]
+                # 이미 요약된 기사와 나머지 원본 기사를 모두 반환 (summary 필드 추가)
+                remaining_articles = [
+                    {**article, "summary": None, "summary_type": "none"}
+                    for article in articles[len(summarized_articles):]
+                ]
                 return summarized_articles + remaining_articles
             
-            # 그 외 에러는 해당 기사만 건너뛰고 계속
-            summarized_articles.append(article)
+            # 그 외 에러는 해당 기사만 건너뛰고 계속 (summary 필드 없이)
+            article_without_summary = {
+                **article,
+                "summary": None,
+                "summary_type": "none"
+            }
+            summarized_articles.append(article_without_summary)
     
     return summarized_articles
 

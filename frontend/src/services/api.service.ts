@@ -241,18 +241,22 @@ export const deleteCategory = async (categoryId: number): Promise<void> => {
 
 /**
  * 뉴스 검색 API 호출
- * @param keyword 검색 키워드
- * @param fromDate 시작일 (YYYY-MM-DD)
- * @param toDate 종료일 (YYYY-MM-DD)
- * @param pageSize 결과 개수 (기본 10)
+ * @param keyword 검색 키워드 (선택, 없으면 국가 헤드라인)
+ * @param country 국가 코드 (kr, us, jp, all 등)
+ * @param translateTo 번역 언어 (ko, en, ja, none)
+ * @param fromDate 시작일 (YYYY-MM-DD, all 모드에서만)
+ * @param toDate 종료일 (YYYY-MM-DD, all 모드에서만)
+ * @param pageSize 결과 개수 (기본 5)
  * @param useGpt GPT-4 요약 사용 여부 (기본 false)
  * @returns 뉴스 검색 결과
  */
 export const searchNews = async (
   keyword: string,
+  country: string = 'kr',
+  translateTo: string = 'ko',
   fromDate?: string,
   toDate?: string,
-  pageSize: number = 10,
+  pageSize: number = 5,
   useGpt: boolean = false
 ): Promise<NewsSearchResponse> => {
   try {
@@ -260,7 +264,9 @@ export const searchNews = async (
       '/api/news/search',
       {
         params: {
-          keyword,
+          keyword: keyword || undefined,
+          country,
+          translate_to: translateTo,
           from_date: fromDate,
           to_date: toDate,
           page_size: pageSize,

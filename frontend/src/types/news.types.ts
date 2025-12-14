@@ -12,8 +12,16 @@ export interface NewsArticle {
   content: string;
   description: string;
   summary?: string;  // Phase 2: 요약 추가
+  summary_type?: string;  // GPT, TF-IDF, none
   urlToImage?: string;
   author?: string;
+  
+  // Phase 7.2: 번역 관련 필드
+  translated_title?: string;
+  translated_description?: string;
+  original_title?: string;
+  original_description?: string;
+  translation_language?: string;  // ko, en, ja 등
 }
 
 export interface NewsSearchResponse {
