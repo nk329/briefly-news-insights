@@ -70,9 +70,8 @@ def create_database():
                     
                     if exists:
                         print(f"⚠️  데이터베이스 '{database}'가 이미 존재합니다.")
-                        use_existing = input("기존 데이터베이스를 사용하시겠습니까? (Y/N): ")
-                        if use_existing.lower() != 'y':
-                            return False
+                        print("기존 데이터베이스를 사용합니다.")
+                        # SSH 환경에서는 자동으로 기존 DB 사용
                     else:
                         # UTF8MB4로 데이터베이스 생성
                         cursor.execute(f"CREATE DATABASE `{database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
