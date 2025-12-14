@@ -25,6 +25,46 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, loading }) => {
   const [toDate, setToDate] = useState('');
   const [useGpt, setUseGpt] = useState(false);
 
+  // 빠른 날짜 선택 함수
+  const setQuickDate = (type: 'today' | 'yesterday' | 'last7days' | 'last30days' | 'clear') => {
+    const today = new Date();
+    const formatDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    switch (type) {
+      case 'today':
+        setFromDate(formatDate(today));
+        setToDate(formatDate(today));
+        break;
+      case 'yesterday':
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        setFromDate(formatDate(yesterday));
+        setToDate(formatDate(yesterday));
+        break;
+      case 'last7days':
+        const last7days = new Date(today);
+        last7days.setDate(last7days.getDate() - 7);
+        setFromDate(formatDate(last7days));
+        setToDate(formatDate(today));
+        break;
+      case 'last30days':
+        const last30days = new Date(today);
+        last30days.setDate(last30days.getDate() - 30);
+        setFromDate(formatDate(last30days));
+        setToDate(formatDate(today));
+        break;
+      case 'clear':
+        setFromDate('');
+        setToDate('');
+        break;
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch(
@@ -118,24 +158,143 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, loading }) => {
 
           {/* 날짜 범위 + GPT */}
           <div style={styles.optionsContainer}>
-            <div style={styles.dateContainer}>
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                style={styles.dateInput}
-                disabled={loading || country !== 'all'}
-                placeholder="연도-월-일"
-              />
-              <span style={styles.dateSeparator}>~</span>
-              <input
-                type="date"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                style={styles.dateInput}
-                disabled={loading || country !== 'all'}
-                placeholder="연도-월-일"
-              />
+            <div style={styles.dateSection}>
+              <div style={styles.quickDateButtons}>
+                <button
+                  type="button"
+                  onClick={() => setQuickDate('today')}
+                  disabled={loading}
+                  style={{
+                    ...styles.quickDateButton,
+                    ...(loading ? styles.quickDateButtonDisabled : {}),
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.backgroundColor = '#f0f0f0';
+                      e.currentTarget.style.borderColor = '#007bff';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.backgroundColor = 'white';
+                      e.currentTarget.style.borderColor = '#e0e0e0';
+                    }
+                  }}
+                >
+                  오늘
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickDate('yesterday')}
+                  disabled={loading}
+                  style={{
+                    ...styles.quickDateButton,
+                    ...(loading ? styles.quickDateButtonDisabled : {}),
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.backgroundColor = '#f0f0f0';
+                      e.currentTarget.style.borderColor = '#007bff';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.backgroundColor = 'white';
+                      e.currentTarget.style.borderColor = '#e0e0e0';
+                    }
+                  }}
+                >
+                  어제
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickDate('last7days')}
+                  disabled={loading}
+                  style={{
+                    ...styles.quickDateButton,
+                    ...(loading ? styles.quickDateButtonDisabled : {}),
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.backgroundColor = '#f0f0f0';
+                      e.currentTarget.style.borderColor = '#007bff';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.backgroundColor = 'white';
+                      e.currentTarget.style.borderColor = '#e0e0e0';
+                    }
+                  }}
+                >
+                  최근 7일
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickDate('last30days')}
+                  disabled={loading}
+                  style={{
+                    ...styles.quickDateButton,
+                    ...(loading ? styles.quickDateButtonDisabled : {}),
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.backgroundColor = '#f0f0f0';
+                      e.currentTarget.style.borderColor = '#007bff';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.backgroundColor = 'white';
+                      e.currentTarget.style.borderColor = '#e0e0e0';
+                    }
+                  }}
+                >
+                  최근 30일
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickDate('clear')}
+                  disabled={loading}
+                  style={{
+                    ...styles.quickDateButton,
+                    ...(loading ? styles.quickDateButtonDisabled : {}),
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.backgroundColor = '#f0f0f0';
+                      e.currentTarget.style.borderColor = '#007bff';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.backgroundColor = 'white';
+                      e.currentTarget.style.borderColor = '#e0e0e0';
+                    }
+                  }}
+                >
+                  전체
+                </button>
+              </div>
+              <div style={styles.dateContainer}>
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  style={styles.dateInput}
+                  disabled={loading}
+                  placeholder="연도-월-일"
+                />
+                <span style={styles.dateSeparator}>~</span>
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  style={styles.dateInput}
+                  disabled={loading}
+                  placeholder="연도-월-일"
+                />
+              </div>
             </div>
             
             <div style={styles.gptContainer}>
@@ -172,7 +331,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, loading }) => {
             }}
             disabled={loading}
           >
-            {loading ? '검색 중...' : '🔍 검색'}
+            {loading ? '검색 중...' : '검색'}
           </button>
         </div>
       </div>
@@ -286,6 +445,33 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '10px',
     outline: 'none',
     transition: 'border-color 0.3s',
+  },
+  dateSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+  },
+  quickDateButtons: {
+    display: 'flex',
+    gap: '8px',
+    flexWrap: 'wrap',
+  },
+  quickDateButton: {
+    padding: '6px 12px',
+    fontSize: '13px',
+    fontWeight: 500,
+    color: '#666',
+    backgroundColor: 'white',
+    border: '1px solid #e0e0e0',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  quickDateButtonDisabled: {
+    backgroundColor: '#f5f5f5',
+    color: '#ccc',
+    cursor: 'not-allowed',
+    borderColor: '#e0e0e0',
   },
   dateContainer: {
     display: 'flex',

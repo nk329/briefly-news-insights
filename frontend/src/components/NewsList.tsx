@@ -177,7 +177,7 @@ export const NewsList: React.FC<NewsListProps> = ({
                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 123, 255, 0.3)';
               }}
             >
-              📰 더 보기 (5개)
+              뉴스 더 보기
             </button>
           )}
         </div>
