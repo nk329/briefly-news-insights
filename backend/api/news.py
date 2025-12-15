@@ -130,14 +130,15 @@ async def search_news(
             ],
         }
         
-        # 선택된 국가에 따른 도메인 필터링 (한국 포함)
-        # 한국어 기사는 후처리 단계에서 제목/설명에 한글이 포함된 기사만 따로 골라냄
+        # 선택된 국가에 따른 도메인 필터링
+        # 한국(kr)은 도메인 제한을 두지 않고, 대신 아래에서 한글 포함 여부로만 필터링
         domains = None
         if country and country != "all":
-            domain_list = country_domain_map.get(country)
-            if domain_list:
-                domains = ",".join(domain_list)
-                logger.info(f"도메인 기반 필터링 사용: country={country}, domains={domains}")
+            if country != "kr":
+                domain_list = country_domain_map.get(country)
+                if domain_list:
+                    domains = ",".join(domain_list)
+                    logger.info(f"도메인 기반 필터링 사용: country={country}, domains={domains}")
         
         if country and country != "all":
             # 키워드가 있으면 해당 국가의 언어로 번역하고 국가 정보 추가
