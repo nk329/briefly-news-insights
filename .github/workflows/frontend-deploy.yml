@@ -1,0 +1,34 @@
+name: Frontend Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy frontend to EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/briefly-news-insights
+            git pull origin main
+
+            cd frontend
+            npm install --no-audit --no-fund
+            npm run build
+
+            # Nginx 설정 리로드
+            sudo systemctl reload nginx
+
+

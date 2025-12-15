@@ -236,7 +236,7 @@ export const Dashboard: React.FC = () => {
 
       <footer style={styles.footer}>
         <p style={styles.footerText}>
-          Powered by NewsAPI | Phase 4: 워드클라우드 완료 ✅
+          Powered by NewsAPI | made by JNK
         </p>
       </footer>
     </div>

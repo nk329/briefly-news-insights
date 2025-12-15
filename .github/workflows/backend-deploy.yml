@@ -1,0 +1,35 @@
+name: Backend Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy backend to EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/briefly-news-insights
+            git pull origin main
+
+            cd backend
+            source venv/bin/activate
+            # 필수 패키지 최신화
+            pip install --no-cache-dir -r requirements.txt
+
+            # 백엔드 서비스 재시작
+            sudo systemctl restart briefly-api
+
+
