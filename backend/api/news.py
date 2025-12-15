@@ -126,13 +126,21 @@ async def search_news(
             ],
         }
         
-        # 선택된 국가에 따른 도메인 문자열
+        # 선택된 국가에 따른 필터링 방식 결정
         domains = None
+        language = None
+        
         if country and country != "all":
-            domain_list = country_domain_map.get(country)
-            if domain_list:
-                domains = ",".join(domain_list)
-                logger.info(f"도메인 기반 필터링 사용: country={country}, domains={domains}")
+            # 한국일 때는 언어 기반 필터링 사용 (한국어 기사)
+            if country == "kr":
+                language = "ko"
+                logger.info(f"언어 기반 필터링 사용: country={country}, language={language}")
+            else:
+                # 다른 국가는 도메인 기반 필터링 사용
+                domain_list = country_domain_map.get(country)
+                if domain_list:
+                    domains = ",".join(domain_list)
+                    logger.info(f"도메인 기반 필터링 사용: country={country}, domains={domains}")
         
         if country and country != "all":
             # 키워드가 있으면 해당 국가의 언어로 번역하고 국가 정보 추가
@@ -150,17 +158,26 @@ async def search_news(
                 search_query = country_keywords.get(country, "news")
             
             # 날짜가 입력되면 항상 get_everything 사용 (날짜 범위 지원)
-            # 도메인 기반으로 get_everything 사용 (날짜 있으면 함께 필터링)
-            logger.info(f"도메인 기반 get_everything 사용: country={country}, from={from_date}, to={to_date}")
+            # 한국은 언어 기반, 다른 국가는 도메인 기반으로 필터링
+            logger.info(f"get_everything 사용: country={country}, from={from_date}, to={to_date}, language={language}, domains={domains}")
             # 인기 뉴스에 가깝게 가져오기 위해 popularity 기준으로 정렬
-            response = newsapi.get_everything(
-                q=search_query,
-                from_param=from_date,
-                to=to_date,
-                sort_by="popularity",
-                page_size=page_size,
-                domains=domains,
-            )
+            
+            # get_everything 파라미터 구성
+            everything_params = {
+                "q": search_query,
+                "from_param": from_date,
+                "to": to_date,
+                "sort_by": "popularity",
+                "page_size": page_size,
+            }
+            
+            # 한국일 때는 language 파라미터 사용, 다른 국가는 domains 파라미터 사용
+            if language:
+                everything_params["language"] = language
+            if domains:
+                everything_params["domains"] = domains
+            
+            response = newsapi.get_everything(**everything_params)
         else:
             # 전체 검색 (날짜 범위 가능)
             logger.info(f"get_everything 사용 (all 모드)")
