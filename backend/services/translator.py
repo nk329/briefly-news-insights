@@ -103,7 +103,7 @@ def translate_text_with_gpt(text: str, target_lang: str = "ko", source_lang: str
         return None
 
 
-def translate_text(text: str, target_lang: str = "ko", source_lang: str = "auto", use_gpt: bool = False) -> str:
+def translate_text(text: str, target_lang: str = "ko", source_lang: str = "auto", use_gpt: bool = True) -> str:
     """
     텍스트를 지정된 언어로 번역합니다.
     GPT를 우선 사용하고, 실패 시 Google Translator로 폴백합니다.
@@ -124,11 +124,14 @@ def translate_text(text: str, target_lang: str = "ko", source_lang: str = "auto"
         logger.warning(f"지원하지 않는 언어: {target_lang}")
         return text
     
-    # ⚠️ 서버 성능 및 타임아웃 이슈로 인해
-    # 현재 프로덕션 환경에서는 GPT 번역을 비활성화합니다.
-    # (필요 시 환경 변수로 다시 활성화하는 방식 권장)
+    # 1) GPT 번역 시도 (옵션)
+    if use_gpt:
+        gpt_translated = translate_text_with_gpt(text, target_lang, source_lang)
+        if gpt_translated:
+            return gpt_translated
+        logger.info("GPT 번역 실패, Google Translator로 폴백")
     
-    # Google Translator로 폴백
+    # 2) Google Translator로 폴백
     try:
         translator = GoogleTranslator(source=source_lang, target=target_lang)
         translated = translator.translate(text[:5000])  # 최대 5000자로 제한
@@ -164,6 +167,8 @@ def translate_articles(
     
     translated_articles = []
     success_count = 0
+    # 너무 많은 GPT 호출을 막기 위해 상위 N개 기사만 GPT 사용
+    gpt_limit = 2
     
     for idx, article in enumerate(articles):
         try:
@@ -172,14 +177,22 @@ def translate_articles(
             # 제목 번역
             if "title" in translate_fields and article.get("title"):
                 original_title = article.get("title", "")
-                translated_title = translate_text(original_title, target_lang)
+                translated_title = translate_text(
+                    original_title,
+                    target_lang,
+                    use_gpt=(idx < gpt_limit),
+                )
                 article_copy["translated_title"] = translated_title
                 article_copy["original_title"] = original_title
             
             # 설명 번역
             if "description" in translate_fields and article.get("description"):
                 original_description = article.get("description", "")
-                translated_description = translate_text(original_description, target_lang)
+                translated_description = translate_text(
+                    original_description,
+                    target_lang,
+                    use_gpt=(idx < gpt_limit),
+                )
                 article_copy["translated_description"] = translated_description
                 article_copy["original_description"] = original_description
             
