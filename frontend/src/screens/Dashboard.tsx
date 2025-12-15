@@ -45,10 +45,15 @@ export const Dashboard: React.FC = () => {
     toDate?: string,
     useGpt?: boolean
   ) => {
+    // 로딩 상태를 먼저 설정하여 로딩 화면이 즉시 보이도록 함
     setLoading(true);
     setError(null);
+    setArticles([]); // 이전 결과 초기화
     setSearchKeyword(keyword || `${country} 뉴스`);
     setCurrentPageSize(5); // 새 검색 시 초기화
+    
+    // 다음 프레임에서 API 호출 (로딩 화면이 먼저 렌더링되도록)
+    await new Promise(resolve => setTimeout(resolve, 0));
 
     // 검색 파라미터 저장 (더 보기 버튼용)
     setLastSearchParams({
@@ -139,18 +144,27 @@ export const Dashboard: React.FC = () => {
     if (!lastSearchParams || loadingMore) return;
 
     setLoadingMore(true);
+    setError(''); // 이전 에러 메시지 초기화
     const nextPageSize = currentPageSize + 5; // 5개씩 추가
 
     try {
-      const response = await searchNews(
-        lastSearchParams.keyword,
-        lastSearchParams.country,
-        lastSearchParams.translateTo,
-        lastSearchParams.fromDate,
-        lastSearchParams.toDate,
-        nextPageSize, // 더 많은 개수 요청
-        lastSearchParams.useGpt || false
-      );
+      // 타임아웃 설정 (90초)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.')), 90000);
+      });
+
+      const response = await Promise.race([
+        searchNews(
+          lastSearchParams.keyword,
+          lastSearchParams.country,
+          lastSearchParams.translateTo,
+          lastSearchParams.fromDate,
+          lastSearchParams.toDate,
+          nextPageSize, // 더 많은 개수 요청
+          lastSearchParams.useGpt || false
+        ),
+        timeoutPromise
+      ]) as any;
 
       if (response.status === 'success') {
         const fetchedArticles = response.data.articles;
@@ -159,7 +173,16 @@ export const Dashboard: React.FC = () => {
         setTotalResults(response.data.total || 0);
       }
     } catch (err: any) {
-      setError('더 많은 뉴스를 불러오는데 실패했습니다.');
+      // 구체적인 에러 메시지 표시
+      if (err.message && err.message.includes('시간이 초과')) {
+        setError('요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.');
+      } else if (err.response?.status === 502) {
+        setError('서버에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      } else if (err.response?.status === 504) {
+        setError('서버 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.');
+      } else {
+        setError(err.response?.data?.detail || err.message || '더 많은 뉴스를 불러오는데 실패했습니다.');
+      }
     } finally {
       setLoadingMore(false);
     }
@@ -201,7 +224,7 @@ export const Dashboard: React.FC = () => {
           articles={articles} 
           loading={loading}
           onLoadMore={handleLoadMore}
-          hasMore={articles.length < totalResults && !loadingMore}
+          hasMore={articles.length < totalResults}
           loadingMore={loadingMore}
         />
         

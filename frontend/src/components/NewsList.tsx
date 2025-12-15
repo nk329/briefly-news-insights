@@ -29,16 +29,34 @@ export const NewsList: React.FC<NewsListProps> = ({
 
   if (loading) {
     return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.spinnerLarge}></div>
-        <p style={styles.loadingTitle}>뉴스를 불러오는 중...</p>
-        <p style={styles.loadingSubtitle}>잠시만 기다려주세요</p>
-        <div style={styles.loadingDots}>
-          <span style={{...styles.dot, animationDelay: '0s'}}></span>
-          <span style={{...styles.dot, animationDelay: '0.2s'}}></span>
-          <span style={{...styles.dot, animationDelay: '0.4s'}}></span>
+      <>
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          @keyframes pulse {
+            0%, 100% { 
+              opacity: 0.4;
+              transform: scale(1);
+            }
+            50% { 
+              opacity: 1;
+              transform: scale(1.2);
+            }
+          }
+        `}</style>
+        <div style={styles.loadingContainer}>
+          <div style={styles.spinnerLarge}></div>
+          <p style={styles.loadingTitle}>뉴스를 불러오는 중...</p>
+          <p style={styles.loadingSubtitle}>잠시만 기다려주세요</p>
+          <div style={styles.loadingDots}>
+            <span style={{...styles.dot, animationDelay: '0s'}}></span>
+            <span style={{...styles.dot, animationDelay: '0.2s'}}></span>
+            <span style={{...styles.dot, animationDelay: '0.4s'}}></span>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
