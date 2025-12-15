@@ -56,29 +56,83 @@ async def search_news(
         
         # 국가별 기본 키워드 (키워드가 없을 때 사용)
         country_keywords = {
-            "jp": "日本 OR ニュース OR Japan",
-            "cn": "中国 OR 新闻 OR China", 
-            "kr": "한국 OR 뉴스 OR Korea",
-            "us": "United States OR America",
-            "gb": "United Kingdom OR Britain",
-            "fr": "France OR français",
-            "de": "Germany OR Deutschland",
-            "au": "Australia",
-            "ca": "Canada"
+            "jp": "ニュース OR Japan",
+            "cn": "新闻 OR China",
+            "kr": "뉴스 OR Korea",
+            "us": "news OR United States OR America",
+            "gb": "news OR United Kingdom OR Britain",
+            "fr": "actualité OR France",
+            "de": "Nachrichten OR Germany",
+            "au": "news OR Australia",
+            "ca": "news OR Canada",
         }
         
-        # 국가별 검색어 추가 (키워드 검색 시 국가 필터링용)
-        country_search_terms = {
-            "jp": "Japan OR 日本 OR ジャパン",
-            "cn": "China OR 中国 OR 中華",
-            "kr": "Korea OR 한국 OR 대한민국",
-            "us": "United States OR USA OR America",
-            "gb": "United Kingdom OR UK OR Britain",
-            "fr": "France OR フランス",
-            "de": "Germany OR Deutschland OR ドイツ",
-            "au": "Australia OR オーストラリア",
-            "ca": "Canada OR カナダ"
+        # 국가별 대표 언론 도메인 (NewsAPI가 지원하는 도메인 위주, 예시는 확장 가능)
+        country_domain_map: dict[str, list[str]] = {
+            # 일본 주요 매체
+            "jp": [
+                "nhk.or.jp",
+                "asahi.com",
+                "yomiuri.co.jp",
+                "mainichi.jp",
+                "nikkei.com",
+            ],
+            # 중국 / 홍콩 매체 (NewsAPI에서 지원하는 일부 영어권 매체 포함)
+            "cn": [
+                "scmp.com",
+                "globaltimes.cn",
+            ],
+            # 한국: NewsAPI에서 공식 지원은 제한적이지만, 확장 가능성을 고려해 정의
+            "kr": [
+                "yna.co.kr",
+                "koreatimes.co.kr",
+                "koreaherald.com",
+            ],
+            # 미국
+            "us": [
+                "nytimes.com",
+                "wsj.com",
+                "washingtonpost.com",
+                "cnn.com",
+                "foxnews.com",
+                "nbcnews.com",
+            ],
+            # 영국
+            "gb": [
+                "bbc.co.uk",
+                "theguardian.com",
+                "independent.co.uk",
+                "telegraph.co.uk",
+            ],
+            # 프랑스
+            "fr": [
+                "lemonde.fr",
+                "lefigaro.fr",
+            ],
+            # 독일
+            "de": [
+                "spiegel.de",
+                "faz.net",
+            ],
+            # 호주
+            "au": [
+                "abc.net.au",
+                "theaustralian.com.au",
+            ],
+            # 캐나다
+            "ca": [
+                "theglobeandmail.com",
+                "nationalpost.com",
+            ],
         }
+        
+        # 선택된 국가에 따른 도메인 문자열
+        domains = None
+        if country and country != "all":
+            domain_list = country_domain_map.get(country)
+            if domain_list:
+                domains = ",".join(domain_list)
+                logger.info(f"도메인 기반 필터링 사용: country={country}, domains={domains}")
         
         if country and country != "all":
             # 키워드가 있으면 해당 국가의 언어로 번역하고 국가 정보 추가
@@ -96,49 +150,16 @@ async def search_news(
                 search_query = country_keywords.get(country, "news")
             
             # 날짜가 입력되면 항상 get_everything 사용 (날짜 범위 지원)
-            if from_date or to_date:
-                logger.info(f"날짜 범위 지정됨, get_everything 사용: country={country}, from={from_date}, to={to_date}")
-                response = newsapi.get_everything(
-                    q=search_query,
-                    from_param=from_date,
-                    to=to_date,
-                    sort_by='publishedAt',
-                    page_size=page_size
-                )
-            else:
-                # 날짜 없으면 get_top_headlines 시도 (일부 국가만 지원)
-                logger.info(f"get_top_headlines 시도: country={country}, keyword={keyword or '없음'}")
-                try:
-                    if keyword:
-                        # 키워드가 있으면 get_everything 사용 (더 많은 결과)
-                        response = newsapi.get_everything(
-                            q=search_query,
-                            sort_by='publishedAt',
-                            page_size=page_size
-                        )
-                    else:
-                        # 키워드 없으면 get_top_headlines 시도
-                        response = newsapi.get_top_headlines(
-                            country=country,
-                            page_size=page_size
-                        )
-                        
-                        # 결과가 없으면 get_everything으로 폴백
-                        if response.get('totalResults', 0) == 0:
-                            logger.info(f"get_top_headlines 결과 없음, get_everything으로 폴백")
-                            response = newsapi.get_everything(
-                                q=search_query,
-                                sort_by='publishedAt',
-                                page_size=page_size
-                            )
-                except Exception as e:
-                    # get_top_headlines 실패 시 get_everything으로 폴백
-                    logger.warning(f"get_top_headlines 실패: {e}, get_everything으로 폴백")
-                    response = newsapi.get_everything(
-                        q=search_query,
-                        sort_by='publishedAt',
-                        page_size=page_size
-                    )
+            # 도메인 기반으로 get_everything 사용 (날짜 있으면 함께 필터링)
+            logger.info(f"도메인 기반 get_everything 사용: country={country}, from={from_date}, to={to_date}")
+            response = newsapi.get_everything(
+                q=search_query,
+                from_param=from_date,
+                to=to_date,
+                sort_by='publishedAt',
+                page_size=page_size,
+                domains=domains,
+            )
         else:
             # 전체 검색 (날짜 범위 가능)
             logger.info(f"get_everything 사용 (all 모드)")
@@ -153,40 +174,6 @@ async def search_news(
         logger.info(f"검색 성공: {response.get('totalResults', 0)}건")
         
         articles = response.get('articles', [])
-        
-        # 국가별 필터링 (키워드 검색 시 더 정확한 필터링)
-        if country and country != "all" and keyword:
-            original_count = len(articles)
-            # 국가별 도메인 및 소스 필터링
-            country_domains = {
-                "jp": [".jp", "japan", "nippon"],
-                "cn": [".cn", "china", "chinese"],
-                "kr": [".kr", "korea", "korean"],
-                "us": [".com", ".us", "usa", "america"],
-                "gb": [".uk", ".co.uk", "britain", "uk"],
-                "fr": [".fr", "france", "french"],
-                "de": [".de", "germany", "german"],
-                "au": [".au", "australia"],
-                "ca": [".ca", "canada"]
-            }
-            
-            domains = country_domains.get(country, [])
-            if domains:
-                filtered_articles = []
-                for article in articles:
-                    url = article.get('url', '').lower()
-                    source_name = article.get('source', {}).get('name', '').lower()
-                    
-                    # URL이나 소스 이름에 국가 관련 키워드가 있는지 확인
-                    if any(domain in url or domain in source_name for domain in domains):
-                        filtered_articles.append(article)
-                
-                if filtered_articles:
-                    articles = filtered_articles
-                    logger.info(f"국가 필터링: {original_count}개 → {len(articles)}개 ({country})")
-                else:
-                    # 필터링 결과가 없으면 원본 유지 (너무 엄격한 필터링 방지)
-                    logger.warning(f"국가 필터링 결과 없음, 원본 유지: {country}")
         
         # 결과가 없으면 에러 메시지 개선
         if not articles or len(articles) == 0:
