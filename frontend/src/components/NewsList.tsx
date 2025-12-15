@@ -188,18 +188,12 @@ export const NewsList: React.FC<NewsListProps> = ({
       </div>
       
       {/* 더 보기 버튼 */}
-      {hasMore && onLoadMore && (
+      {(hasMore || loadingMore) && onLoadMore && (
         <div style={styles.loadMoreContainer}>
           {loadingMore ? (
             <div style={styles.loadingWrapper}>
               <div style={styles.loadingSpinner}></div>
               <span style={styles.loadingText}>뉴스를 불러오는 중...</span>
-              <span style={styles.loadingSubtext}>잠시만 기다려주세요</span>
-              <div style={styles.loadingDots}>
-                <span style={{...styles.dot, animationDelay: '0s'}}></span>
-                <span style={{...styles.dot, animationDelay: '0.2s'}}></span>
-                <span style={{...styles.dot, animationDelay: '0.4s'}}></span>
-              </div>
             </div>
           ) : (
             <button
@@ -479,23 +473,24 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   loadingWrapper: {
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: '15px',
-    padding: '20px',
+    justifyContent: 'center',
+    gap: '12px',
+    padding: '14px 40px',
   },
   loadingSpinner: {
-    width: '40px',
-    height: '40px',
-    border: '4px solid #f3f3f3',
-    borderTop: '4px solid #007bff',
+    width: '20px',
+    height: '20px',
+    border: '3px solid #e3f2fd',
+    borderTop: '3px solid #007bff',
     borderRadius: '50%',
-    animation: 'spin 1s linear infinite',
+    animation: 'spin 0.8s linear infinite',
   },
   loadingText: {
     fontSize: '16px',
-    color: '#666',
-    fontWeight: 500,
+    color: '#007bff',
+    fontWeight: 600,
   },
   loadingSubtext: {
     fontSize: '14px',
