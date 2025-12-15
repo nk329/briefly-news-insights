@@ -152,23 +152,25 @@ async def search_news(
             # 날짜가 입력되면 항상 get_everything 사용 (날짜 범위 지원)
             # 도메인 기반으로 get_everything 사용 (날짜 있으면 함께 필터링)
             logger.info(f"도메인 기반 get_everything 사용: country={country}, from={from_date}, to={to_date}")
+            # 인기 뉴스에 가깝게 가져오기 위해 popularity 기준으로 정렬
             response = newsapi.get_everything(
                 q=search_query,
                 from_param=from_date,
                 to=to_date,
-                sort_by='publishedAt',
+                sort_by="popularity",
                 page_size=page_size,
                 domains=domains,
             )
         else:
             # 전체 검색 (날짜 범위 가능)
             logger.info(f"get_everything 사용 (all 모드)")
+            # 전체(all) 모드도 popularity 기준 정렬 사용
             response = newsapi.get_everything(
                 q=keyword if keyword else "news",
                 from_param=from_date,
                 to=to_date,
-                sort_by='publishedAt',
-                page_size=page_size
+                sort_by="popularity",
+                page_size=page_size,
             )
         
         logger.info(f"검색 성공: {response.get('totalResults', 0)}건")
