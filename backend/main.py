@@ -20,11 +20,12 @@ app.add_middleware(
 )
 
 # 라우터 등록
-from api import news, analysis, auth, history, category
+# 성능 및 안정성 문제로 분석 라우터(analysis) 일시 비활성화
+from api import news, auth, history, category  # analysis 임시 제외
 
 app.include_router(auth.router)
 app.include_router(news.router)
-app.include_router(analysis.router)
+# app.include_router(analysis.router)  # Java/SIGBUS 문제로 비활성화
 app.include_router(history.router)
 app.include_router(category.router)
 
