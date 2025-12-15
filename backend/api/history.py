@@ -4,6 +4,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+from datetime import datetime, timezone
 from database import get_db
 from models.user_models import User, SearchHistory
 from models.user_schemas import SearchHistoryCreate, SearchHistoryResponse
@@ -41,12 +42,14 @@ async def create_search_history(
     """
     검색 히스토리 저장
     """
+    # 명시적으로 UTC 시간 설정
     new_history = SearchHistory(
         user_id=current_user.id,
         keyword=history_data.keyword,
         from_date=history_data.from_date,
         to_date=history_data.to_date,
-        results_count=history_data.results_count
+        results_count=history_data.results_count,
+        searched_at=datetime.now(timezone.utc)  # UTC 시간 명시적 설정
     )
     
     db.add(new_history)

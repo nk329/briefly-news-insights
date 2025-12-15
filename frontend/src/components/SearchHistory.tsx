@@ -60,8 +60,17 @@ export const SearchHistory: React.FC<SearchHistoryProps> = ({ onSelectHistory })
   };
 
   const formatDate = (dateString: string) => {
+    // 백엔드에서 받은 시간 문자열 파싱 (ISO 8601 형식, UTC 또는 타임존 포함)
     const date = new Date(dateString);
+    
+    // 유효하지 않은 날짜인 경우 처리
+    if (isNaN(date.getTime())) {
+      return '알 수 없음';
+    }
+    
     const now = new Date();
+    
+    // 밀리초 단위 시간 차이 계산 (UTC 기준으로 자동 변환됨)
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
