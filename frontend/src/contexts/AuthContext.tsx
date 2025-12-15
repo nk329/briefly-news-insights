@@ -36,17 +36,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           // 백그라운드에서 토큰 유효성 확인
           const currentUser = await getCurrentUser();
           setUser(currentUser);
-        } catch (error) {
-          // 토큰이 만료되었거나 유효하지 않음
-          console.error('토큰 검증 실패:', error);
-          // 에러가 나도 저장된 사용자 정보는 유지 (개발 중)
-          try {
-            setUser(JSON.parse(savedUser));
-          } catch {
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('user');
-            setUser(null);
-          }
+        } catch {
+          // 토큰이 만료되었거나 유효하지 않으면 정리
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('user');
+          setUser(null);
         }
       }
       setIsLoading(false);
@@ -71,8 +65,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const currentUser = await getCurrentUser();
       setUser(currentUser);
       localStorage.setItem('user', JSON.stringify(currentUser));
-    } catch (error) {
-      console.error('사용자 정보 갱신 실패:', error);
+    } catch {
       logout();
     }
   };

@@ -42,7 +42,6 @@ export const Signup: React.FC<SignupProps> = ({ onSwitchToLogin, onClose }) => {
       login(response.user, response.access_token);
       onClose();
     } catch (err: any) {
-      console.error('회원가입 실패:', err);
       if (err.response?.status === 400) {
         setError(err.response.data.detail || '이미 등록된 이메일 또는 사용자명입니다');
       } else {

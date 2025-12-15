@@ -86,8 +86,8 @@ export const Dashboard: React.FC = () => {
               toDate,
               fetchedArticles.length
             );
-          } catch (err) {
-            console.error('검색 히스토리 저장 실패:', err);
+          } catch {
+            // 히스토리 저장 실패는 UI에만 영향을 주므로 조용히 무시
           }
         }
         
@@ -120,7 +120,6 @@ export const Dashboard: React.FC = () => {
         setError(response.message || '뉴스 검색에 실패했습니다.');
       }
     } catch (err: any) {
-      console.error('검색 에러:', err);
       setError(
         err.response?.data?.detail ||
         err.message ||
@@ -160,7 +159,6 @@ export const Dashboard: React.FC = () => {
         setTotalResults(response.data.total || 0);
       }
     } catch (err: any) {
-      console.error('더 보기 에러:', err);
       setError('더 많은 뉴스를 불러오는데 실패했습니다.');
     } finally {
       setLoadingMore(false);
@@ -173,7 +171,7 @@ export const Dashboard: React.FC = () => {
         <div style={styles.headerContent}>
           <div style={styles.titleSection}>
             <h1 style={styles.title}>Briefly News Insights</h1>
-            <p style={styles.subtitle}>뉴스 검색 및 분석 대시보드</p>
+            <p style={styles.subtitle}>전 세계 뉴스를 한눈에 보고 분석하는 대시보드</p>
           </div>
           <UserHeader />
         </div>

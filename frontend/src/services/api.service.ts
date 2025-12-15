@@ -29,29 +29,21 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
-    console.log('[API] Request:', config.method?.toUpperCase(), config.url);
-    console.log('[API] Token exists:', !!token);
-    
+
     if (token) {
       config.headers = config.headers || {};
       config.headers['Authorization'] = `Bearer ${token}`;
-      console.log('[API] Authorization header set');
     }
     return config;
   },
-  (error) => {
-    console.error('[API] Request error:', error);
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response 인터셉터: 에러 처리
+// Response 인터셉터: 401 시 토큰 정리
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      console.error('[API] 401 Unauthorized - 토큰이 유효하지 않습니다');
-      // 토큰 제거
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
     }
@@ -69,7 +61,6 @@ export const signup = async (data: SignupRequest): Promise<User> => {
     const response = await apiClient.post<User>('/api/auth/signup', data);
     return response.data;
   } catch (error) {
-    console.error('회원가입 실패:', error);
     throw error;
   }
 };
@@ -85,7 +76,6 @@ export const login = async (data: LoginRequest): Promise<AuthResponse> => {
     localStorage.setItem('user', JSON.stringify(response.data.user));
     return response.data;
   } catch (error) {
-    console.error('로그인 실패:', error);
     throw error;
   }
 };
@@ -106,7 +96,6 @@ export const getCurrentUser = async (): Promise<User> => {
     const response = await apiClient.get<User>('/api/auth/me');
     return response.data;
   } catch (error) {
-    console.error('사용자 정보 조회 실패:', error);
     throw error;
   }
 };
@@ -126,7 +115,6 @@ export const getSearchHistories = async (
     });
     return response.data;
   } catch (error) {
-    console.error('검색 히스토리 조회 실패:', error);
     throw error;
   }
 };
@@ -149,7 +137,6 @@ export const createSearchHistory = async (
     });
     return response.data;
   } catch (error) {
-    console.error('검색 히스토리 저장 실패:', error);
     throw error;
   }
 };
@@ -161,7 +148,6 @@ export const deleteSearchHistory = async (historyId: number): Promise<void> => {
   try {
     await apiClient.delete(`/api/history/${historyId}`);
   } catch (error) {
-    console.error('검색 히스토리 삭제 실패:', error);
     throw error;
   }
 };
@@ -173,7 +159,6 @@ export const deleteAllSearchHistories = async (): Promise<void> => {
   try {
     await apiClient.delete('/api/history/');
   } catch (error) {
-    console.error('검색 히스토리 전체 삭제 실패:', error);
     throw error;
   }
 };
@@ -188,7 +173,6 @@ export const getCategories = async (): Promise<Category[]> => {
     const response = await apiClient.get<Category[]>('/api/categories/');
     return response.data;
   } catch (error) {
-    console.error('카테고리 조회 실패:', error);
     throw error;
   }
 };
@@ -201,7 +185,6 @@ export const createCategory = async (data: CategoryCreate): Promise<Category> =>
     const response = await apiClient.post<Category>('/api/categories/', data);
     return response.data;
   } catch (error) {
-    console.error('카테고리 생성 실패:', error);
     throw error;
   }
 };
@@ -220,7 +203,6 @@ export const updateCategory = async (
     );
     return response.data;
   } catch (error) {
-    console.error('카테고리 수정 실패:', error);
     throw error;
   }
 };
@@ -232,7 +214,6 @@ export const deleteCategory = async (categoryId: number): Promise<void> => {
   try {
     await apiClient.delete(`/api/categories/${categoryId}`);
   } catch (error) {
-    console.error('카테고리 삭제 실패:', error);
     throw error;
   }
 };
@@ -276,7 +257,6 @@ export const searchNews = async (
     );
     return response.data;
   } catch (error) {
-    console.error('뉴스 검색 실패:', error);
     throw error;
   }
 };
@@ -301,7 +281,6 @@ export const analyzeArticlesKeywords = async (
     );
     return response.data;
   } catch (error) {
-    console.error('키워드 분석 실패:', error);
     throw error;
   }
 };
@@ -326,7 +305,6 @@ export const completeAnalysis = async (
     );
     return response.data;
   } catch (error) {
-    console.error('통합 분석 실패:', error);
     throw error;
   }
 };
@@ -354,7 +332,6 @@ export const generateWordCloud = async (
     );
     return response.data;
   } catch (error) {
-    console.error('워드클라우드 생성 실패:', error);
     throw error;
   }
 };
@@ -368,7 +345,6 @@ export const healthCheck = async (): Promise<{ status: string }> => {
     const response = await apiClient.get('/health');
     return response.data;
   } catch (error) {
-    console.error('서버 상태 확인 실패:', error);
     throw error;
   }
 };

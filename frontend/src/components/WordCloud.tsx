@@ -47,7 +47,7 @@ export const WordCloud: React.FC<WordCloudProps> = ({
           alt="워드클라우드"
           style={styles.image}
           onError={(e) => {
-            console.error('워드클라우드 이미지 로드 실패');
+            // 이미지 로드 실패 시 화면에서만 숨김
             e.currentTarget.style.display = 'none';
           }}
         />

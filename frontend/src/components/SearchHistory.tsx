@@ -30,7 +30,6 @@ export const SearchHistory: React.FC<SearchHistoryProps> = ({ onSelectHistory })
       const data = await getSearchHistories(0, 10);
       setHistories(data);
     } catch (err) {
-      console.error('히스토리 로드 실패:', err);
       setError('검색 히스토리를 불러올 수 없습니다');
     } finally {
       setLoading(false);
@@ -43,7 +42,7 @@ export const SearchHistory: React.FC<SearchHistoryProps> = ({ onSelectHistory })
       await deleteSearchHistory(historyId);
       setHistories(histories.filter((h) => h.id !== historyId));
     } catch (err) {
-      console.error('히스토리 삭제 실패:', err);
+      // 히스토리 삭제 실패는 콘솔 출력 없이 무시
     }
   };
 
@@ -56,7 +55,7 @@ export const SearchHistory: React.FC<SearchHistoryProps> = ({ onSelectHistory })
       await deleteAllSearchHistories();
       setHistories([]);
     } catch (err) {
-      console.error('히스토리 전체 삭제 실패:', err);
+      // 전체 삭제 실패도 콘솔 출력 없이 무시
     }
   };
 
