@@ -103,7 +103,7 @@ def translate_text_with_gpt(text: str, target_lang: str = "ko", source_lang: str
         return None
 
 
-def translate_text(text: str, target_lang: str = "ko", source_lang: str = "auto", use_gpt: bool = True) -> str:
+def translate_text(text: str, target_lang: str = "ko", source_lang: str = "auto", use_gpt: bool = False) -> str:
     """
     텍스트를 지정된 언어로 번역합니다.
     GPT를 우선 사용하고, 실패 시 Google Translator로 폴백합니다.
@@ -124,12 +124,9 @@ def translate_text(text: str, target_lang: str = "ko", source_lang: str = "auto"
         logger.warning(f"지원하지 않는 언어: {target_lang}")
         return text
     
-    # GPT로 번역 시도 (더 정확함)
-    if use_gpt:
-        gpt_translated = translate_text_with_gpt(text, target_lang, source_lang)
-        if gpt_translated:
-            return gpt_translated
-        logger.info("GPT 번역 실패, Google Translator로 폴백")
+    # ⚠️ 서버 성능 및 타임아웃 이슈로 인해
+    # 현재 프로덕션 환경에서는 GPT 번역을 비활성화합니다.
+    # (필요 시 환경 변수로 다시 활성화하는 방식 권장)
     
     # Google Translator로 폴백
     try:
