@@ -29,9 +29,15 @@ export const NewsList: React.FC<NewsListProps> = ({
 
   if (loading) {
     return (
-      <div style={styles.message}>
-        <div style={styles.spinner}></div>
-        <p>뉴스를 불러오는 중...</p>
+      <div style={styles.loadingContainer}>
+        <div style={styles.spinnerLarge}></div>
+        <p style={styles.loadingTitle}>뉴스를 불러오는 중...</p>
+        <p style={styles.loadingSubtitle}>잠시만 기다려주세요</p>
+        <div style={styles.loadingDots}>
+          <span style={{...styles.dot, animationDelay: '0s'}}></span>
+          <span style={{...styles.dot, animationDelay: '0.2s'}}></span>
+          <span style={{...styles.dot, animationDelay: '0.4s'}}></span>
+        </div>
       </div>
     );
   }
@@ -52,6 +58,16 @@ export const NewsList: React.FC<NewsListProps> = ({
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { 
+            opacity: 0.4;
+            transform: scale(1);
+          }
+          50% { 
+            opacity: 1;
+            transform: scale(1.2);
+          }
         }
       `}</style>
       <div style={styles.container}>
@@ -161,6 +177,11 @@ export const NewsList: React.FC<NewsListProps> = ({
               <div style={styles.loadingSpinner}></div>
               <span style={styles.loadingText}>뉴스를 불러오는 중...</span>
               <span style={styles.loadingSubtext}>잠시만 기다려주세요</span>
+              <div style={styles.loadingDots}>
+                <span style={{...styles.dot, animationDelay: '0s'}}></span>
+                <span style={{...styles.dot, animationDelay: '0.2s'}}></span>
+                <span style={{...styles.dot, animationDelay: '0.4s'}}></span>
+              </div>
             </div>
           ) : (
             <button
@@ -367,6 +388,49 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderTop: '4px solid #007bff',
     borderRadius: '50%',
     animation: 'spin 1s linear infinite',
+  },
+  loadingContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '60px 20px',
+    minHeight: '300px',
+  },
+  spinnerLarge: {
+    width: '60px',
+    height: '60px',
+    margin: '0 auto 30px',
+    border: '5px solid #e3f2fd',
+    borderTop: '5px solid #007bff',
+    borderRadius: '50%',
+    animation: 'spin 0.8s linear infinite',
+    boxShadow: '0 4px 12px rgba(0, 123, 255, 0.2)',
+  },
+  loadingTitle: {
+    fontSize: '20px',
+    fontWeight: 600,
+    color: '#333',
+    marginBottom: '8px',
+  },
+  loadingSubtitle: {
+    fontSize: '14px',
+    color: '#666',
+    marginBottom: '20px',
+  },
+  loadingDots: {
+    display: 'flex',
+    gap: '8px',
+    marginTop: '10px',
+    alignItems: 'center',
+  },
+  dot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    backgroundColor: '#007bff',
+    animation: 'pulse 1.4s ease-in-out infinite',
+    opacity: 0.6,
   },
   emptyIcon: {
     fontSize: '64px',
