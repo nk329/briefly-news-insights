@@ -3,6 +3,7 @@ from newsapi import NewsApiClient
 import os
 from dotenv import load_dotenv
 import logging
+import re
 from services.summarizer import summarize_articles
 from services.gpt_summarizer import summarize_articles_with_gpt
 from services.translator import translate_articles, translate_keyword_for_country
@@ -22,6 +23,9 @@ if api_key:
 
 router = APIRouter(prefix="/api/news", tags=["news"])
 newsapi = NewsApiClient(api_key=api_key)
+
+# 한글 여부 체크용 정규식 (한국어 기사 필터링에 사용)
+HANGUL_REGEX = re.compile(r"[가-힣]")
 
 @router.get("/search")
 async def search_news(
@@ -126,21 +130,14 @@ async def search_news(
             ],
         }
         
-        # 선택된 국가에 따른 필터링 방식 결정
+        # 선택된 국가에 따른 도메인 필터링 (한국 포함)
+        # 한국어 기사는 후처리 단계에서 제목/설명에 한글이 포함된 기사만 따로 골라냄
         domains = None
-        language = None
-        
         if country and country != "all":
-            # 한국일 때는 언어 기반 필터링 사용 (한국어 기사)
-            if country == "kr":
-                language = "ko"
-                logger.info(f"언어 기반 필터링 사용: country={country}, language={language}")
-            else:
-                # 다른 국가는 도메인 기반 필터링 사용
-                domain_list = country_domain_map.get(country)
-                if domain_list:
-                    domains = ",".join(domain_list)
-                    logger.info(f"도메인 기반 필터링 사용: country={country}, domains={domains}")
+            domain_list = country_domain_map.get(country)
+            if domain_list:
+                domains = ",".join(domain_list)
+                logger.info(f"도메인 기반 필터링 사용: country={country}, domains={domains}")
         
         if country and country != "all":
             # 키워드가 있으면 해당 국가의 언어로 번역하고 국가 정보 추가
@@ -158,26 +155,17 @@ async def search_news(
                 search_query = country_keywords.get(country, "news")
             
             # 날짜가 입력되면 항상 get_everything 사용 (날짜 범위 지원)
-            # 한국은 언어 기반, 다른 국가는 도메인 기반으로 필터링
-            logger.info(f"get_everything 사용: country={country}, from={from_date}, to={to_date}, language={language}, domains={domains}")
+            # 도메인 기반으로 get_everything 사용 (날짜 있으면 함께 필터링)
+            logger.info(f"get_everything 사용: country={country}, from={from_date}, to={to_date}, domains={domains}")
             # 인기 뉴스에 가깝게 가져오기 위해 popularity 기준으로 정렬
-            
-            # get_everything 파라미터 구성
-            everything_params = {
-                "q": search_query,
-                "from_param": from_date,
-                "to": to_date,
-                "sort_by": "popularity",
-                "page_size": page_size,
-            }
-            
-            # 한국일 때는 language 파라미터 사용, 다른 국가는 domains 파라미터 사용
-            if language:
-                everything_params["language"] = language
-            if domains:
-                everything_params["domains"] = domains
-            
-            response = newsapi.get_everything(**everything_params)
+            response = newsapi.get_everything(
+                q=search_query,
+                from_param=from_date,
+                to=to_date,
+                sort_by="popularity",
+                page_size=page_size,
+                domains=domains,
+            )
         else:
             # 전체 검색 (날짜 범위 가능)
             logger.info(f"get_everything 사용 (all 모드)")
@@ -193,6 +181,23 @@ async def search_news(
         logger.info(f"검색 성공: {response.get('totalResults', 0)}건")
         
         articles = response.get('articles', [])
+
+        # 한국어 기사 필터링 (country=kr 인 경우)
+        if country == "kr" and articles:
+            original_count = len(articles)
+            korean_articles = []
+            for article in articles:
+                title = article.get("title", "") or ""
+                description = article.get("description", "") or ""
+                text = f"{title} {description}"
+                if HANGUL_REGEX.search(text):
+                    korean_articles.append(article)
+
+            if korean_articles:
+                logger.info(f"한국어 기사 필터링: {len(korean_articles)}/{original_count}개 유지")
+                articles = korean_articles
+            else:
+                logger.info("한국어 기사를 찾지 못해 원본 결과를 그대로 사용합니다.")
         
         # 결과가 없으면 에러 메시지 개선
         if not articles or len(articles) == 0:
