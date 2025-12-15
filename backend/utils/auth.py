@@ -35,6 +35,9 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def get_password_hash(password: str) -> str:
     """비밀번호 해싱"""
+    # bcrypt는 72바이트를 초과하면 예외가 발생하므로 안전하게 잘라서 처리
+    if len(password) > 72:
+        password = password[:72]
     return pwd_context.hash(password)
 
 

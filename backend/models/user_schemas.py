@@ -11,7 +11,8 @@ class UserCreate(BaseModel):
     """회원가입 요청"""
     email: EmailStr
     username: str = Field(..., min_length=3, max_length=50)
-    password: str = Field(..., min_length=6, max_length=100)
+    # bcrypt는 72바이트 제한이 있으므로 72자로 제한
+    password: str = Field(..., min_length=6, max_length=72)
 
 
 class UserLogin(BaseModel):
