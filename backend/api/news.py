@@ -26,8 +26,8 @@ newsapi = NewsApiClient(api_key=api_key)
 
 # 언어별 필터링용 정규식
 HANGUL_REGEX = re.compile(r"[가-힣]")  # 한국어
-JAPANESE_REGEX = re.compile(r"[ひらがなカタカナ一-龯]")  # 일본어 (히라가나, 가타카나, 한자)
-CHINESE_REGEX = re.compile(r"[一-龯]")  # 중국어 (한자)
+JAPANESE_REGEX = re.compile(r"[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]")  # 일본어 (히라가나, 가타카나, 한자)
+CHINESE_REGEX = re.compile(r"[\u4E00-\u9FAF]")  # 중국어 (한자)
 ENGLISH_REGEX = re.compile(r"[a-zA-Z]")  # 영어
 FRENCH_REGEX = re.compile(r"[a-zA-Zàâäéèêëïîôùûüÿç]")  # 프랑스어
 GERMAN_REGEX = re.compile(r"[a-zA-Zäöüß]")  # 독일어
