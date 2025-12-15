@@ -60,17 +60,26 @@ export const SearchHistory: React.FC<SearchHistoryProps> = ({ onSelectHistory })
   };
 
   const formatDate = (dateString: string) => {
-    // 백엔드에서 받은 시간 문자열 파싱 (ISO 8601 형식, UTC 또는 타임존 포함)
-    const date = new Date(dateString);
-    
+    // 백엔드에서 넘어오는 시간이 타임존 정보 없이 UTC 기준인 경우가 있어
+    // 브라우저가 로컬 시간(한국 시간)으로 잘못 해석하면서 정확히 9시간 차이가 나는 문제가 발생함
+    // → 타임존 정보가 없으면 UTC 기준으로 해석하도록 강제
+    let normalized = dateString;
+
+    // 타임존 정보(Z 또는 +09:00 같은 오프셋)가 없다면 UTC 로 간주하고 'Z'를 붙여줌
+    if (normalized && !/Z$|[+-]\d{2}:\d{2}$/.test(normalized)) {
+      normalized = `${normalized}Z`;
+    }
+
+    const date = new Date(normalized);
+
     // 유효하지 않은 날짜인 경우 처리
     if (isNaN(date.getTime())) {
       return '알 수 없음';
     }
-    
+
     const now = new Date();
-    
-    // 밀리초 단위 시간 차이 계산 (UTC 기준으로 자동 변환됨)
+
+    // 밀리초 단위 시간 차이 계산
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
