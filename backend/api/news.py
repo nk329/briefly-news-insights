@@ -24,8 +24,26 @@ if api_key:
 router = APIRouter(prefix="/api/news", tags=["news"])
 newsapi = NewsApiClient(api_key=api_key)
 
-# 한글 여부 체크용 정규식 (한국어 기사 필터링에 사용)
-HANGUL_REGEX = re.compile(r"[가-힣]")
+# 언어별 필터링용 정규식
+HANGUL_REGEX = re.compile(r"[가-힣]")  # 한국어
+JAPANESE_REGEX = re.compile(r"[ひらがなカタカナ一-龯]")  # 일본어 (히라가나, 가타카나, 한자)
+CHINESE_REGEX = re.compile(r"[一-龯]")  # 중국어 (한자)
+ENGLISH_REGEX = re.compile(r"[a-zA-Z]")  # 영어
+FRENCH_REGEX = re.compile(r"[a-zA-Zàâäéèêëïîôùûüÿç]")  # 프랑스어
+GERMAN_REGEX = re.compile(r"[a-zA-Zäöüß]")  # 독일어
+
+# 국가별 언어 매핑
+COUNTRY_LANGUAGE_REGEX = {
+    "kr": HANGUL_REGEX,
+    "jp": JAPANESE_REGEX,
+    "cn": CHINESE_REGEX,
+    "us": ENGLISH_REGEX,
+    "gb": ENGLISH_REGEX,
+    "au": ENGLISH_REGEX,
+    "ca": ENGLISH_REGEX,
+    "fr": FRENCH_REGEX,
+    "de": GERMAN_REGEX,
+}
 
 @router.get("/search")
 async def search_news(
@@ -130,34 +148,23 @@ async def search_news(
             ],
         }
         
-        # 선택된 국가에 따른 도메인 필터링
-        # 한국(kr)은 도메인 제한을 두지 않고, 대신 아래에서 한글 포함 여부로만 필터링
+        # 모든 국가에서 도메인 필터링 제거 (언어 기반 필터링으로 대체)
         domains = None
-        if country and country != "all":
-            if country != "kr":
-                domain_list = country_domain_map.get(country)
-                if domain_list:
-                    domains = ",".join(domain_list)
-                    logger.info(f"도메인 기반 필터링 사용: country={country}, domains={domains}")
         
         if country and country != "all":
-            # 키워드가 있으면 해당 국가의 언어로 번역하고 국가 정보 추가
+            # 키워드가 있으면 해당 국가의 언어로 번역
             if keyword:
                 logger.info(f"키워드 번역 시작: '{keyword}' (국가: {country})")
                 translated_keyword = translate_keyword_for_country(keyword, country)
                 logger.info(f"키워드 번역 완료: '{keyword}' → '{translated_keyword}'")
-                
-                # 국가 정보를 추가하여 해당 국가 뉴스 우선 검색
-                # AND 조건이 너무 엄격할 수 있으므로, 키워드만 사용하고 후처리로 필터링
                 search_query = translated_keyword
                 logger.info(f"번역된 키워드로 검색: '{search_query}' (국가: {country})")
             else:
                 # 키워드 없으면 국가별 기본 키워드 사용
                 search_query = country_keywords.get(country, "news")
             
-            # 날짜가 입력되면 항상 get_everything 사용 (날짜 범위 지원)
-            # 도메인 기반으로 get_everything 사용 (날짜 있으면 함께 필터링)
-            logger.info(f"get_everything 사용: country={country}, from={from_date}, to={to_date}, domains={domains}")
+            # 도메인 필터링 없이 검색 (언어 기반 후처리 필터링 사용)
+            logger.info(f"get_everything 사용: country={country}, from={from_date}, to={to_date} (도메인 필터링 없음)")
             # 인기 뉴스에 가깝게 가져오기 위해 popularity 기준으로 정렬
             response = newsapi.get_everything(
                 q=search_query,
@@ -165,7 +172,6 @@ async def search_news(
                 to=to_date,
                 sort_by="popularity",
                 page_size=page_size,
-                domains=domains,
             )
         else:
             # 전체 검색 (날짜 범위 가능)
@@ -183,22 +189,24 @@ async def search_news(
         
         articles = response.get('articles', [])
 
-        # 한국어 기사 필터링 (country=kr 인 경우)
-        if country == "kr" and articles:
-            original_count = len(articles)
-            korean_articles = []
-            for article in articles:
-                title = article.get("title", "") or ""
-                description = article.get("description", "") or ""
-                text = f"{title} {description}"
-                if HANGUL_REGEX.search(text):
-                    korean_articles.append(article)
+        # 국가별 언어 기반 기사 필터링
+        if country and country != "all" and articles:
+            language_regex = COUNTRY_LANGUAGE_REGEX.get(country)
+            if language_regex:
+                original_count = len(articles)
+                filtered_articles = []
+                for article in articles:
+                    title = article.get("title", "") or ""
+                    description = article.get("description", "") or ""
+                    text = f"{title} {description}"
+                    if language_regex.search(text):
+                        filtered_articles.append(article)
 
-            if korean_articles:
-                logger.info(f"한국어 기사 필터링: {len(korean_articles)}/{original_count}개 유지")
-                articles = korean_articles
-            else:
-                logger.info("한국어 기사를 찾지 못해 원본 결과를 그대로 사용합니다.")
+                if filtered_articles:
+                    logger.info(f"{country} 국가 언어 기사 필터링: {len(filtered_articles)}/{original_count}개 유지")
+                    articles = filtered_articles
+                else:
+                    logger.info(f"{country} 국가 언어 기사를 찾지 못해 원본 결과를 그대로 사용합니다.")
         
         # 결과가 없으면 에러 메시지 개선
         if not articles or len(articles) == 0:
